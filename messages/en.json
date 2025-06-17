@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "home": "Home",
+    "discovery": "Discovery", 
+    "create": "Create Artbook",
+    "profile": "User Profile"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "enterEmail": "Enter your email",
+    "enterPassword": "Enter your password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "loginDescription": "Enter your credentials to access your account",
+    "signupDescription": "Create a new account to start creating artbooks",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "common": {
+    "language": "Language"
+  }
+}
