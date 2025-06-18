@@ -1,18 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, Manrope, Comic_Neue } from "next/font/google";
 import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { AppLayout } from "@/components/app-layout";
+import { Toaster } from "sonner";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const syne = Syne({
+	variable: "--font-syne",
 	subsets: ["latin"],
+	weight: ["400", "600"],
 });
 
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+const manrope = Manrope({
+	variable: "--font-manrope",
 	subsets: ["latin"],
+	weight: ["800"],
+});
+
+const comicNeue = Comic_Neue({
+	variable: "--font-comic-neue",
+	subsets: ["latin"],
+	weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -31,12 +40,20 @@ export default async function RootLayout({
 	return (
 		<html lang="en">
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${syne.variable} ${manrope.variable} ${comicNeue.variable} antialiased`}
 			>
 				<NextIntlClientProvider messages={messages}>
 					<AppLayout>
 						{children}
 					</AppLayout>
+					<Toaster 
+						position="top-center"
+						toastOptions={{
+							style: {
+								fontFamily: 'Syne, sans-serif',
+							},
+						}}
+					/>
 				</NextIntlClientProvider>
 			</body>
 		</html>
