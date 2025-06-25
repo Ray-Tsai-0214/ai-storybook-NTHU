@@ -4,6 +4,7 @@ import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { AppLayout } from "@/components/app-layout";
+import { AuthProvider } from "@/components/auth-provider-zustand";
 import { Toaster } from "sonner";
 
 const syne = Syne({
@@ -43,9 +44,11 @@ export default async function RootLayout({
 				className={`${syne.variable} ${manrope.variable} ${comicNeue.variable} antialiased`}
 			>
 				<NextIntlClientProvider messages={messages}>
-					<AppLayout>
-						{children}
-					</AppLayout>
+					<AuthProvider>
+						<AppLayout>
+							{children}
+						</AppLayout>
+					</AuthProvider>
 					<Toaster 
 						position="top-center"
 						toastOptions={{

@@ -11,22 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOut } from "@/lib/auth-client";
-import { useAuth } from "@/components/auth-provider";
-import { SignInDialog } from "./sign-in-dialog";
-import { SignUpDialog } from "./sign-up-dialog";
+import { useAuth } from "@/lib/stores/auth-store";
+import Link from "next/link";
 import { User, Settings, LogOut } from "lucide-react";
 
 export function UserNav() {
-  const { user, isLoading } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Sign out error:", error);
-    }
-  };
+  const { user, isLoading, signOut } = useAuth();
 
   if (isLoading) {
     return (
@@ -39,16 +29,16 @@ export function UserNav() {
   if (!user) {
     return (
       <div className="flex items-center space-x-2">
-        <SignInDialog>
+        <Link href="/login">
           <Button variant="ghost" size="sm">
             Sign In
           </Button>
-        </SignInDialog>
-        <SignUpDialog>
+        </Link>
+        <Link href="/signup">
           <Button size="sm">
             Sign Up
           </Button>
-        </SignUpDialog>
+        </Link>
       </div>
     );
   }
@@ -86,7 +76,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
