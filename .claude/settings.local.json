@@ -1,0 +1,27 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(find:*)",
+			"Bash(grep:*)",
+			"Bash(rg:*)",
+			"Bash(rm:*)",
+			"Bash(*)",
+			"Bash(mkdir:*)",
+			"Read(*)",
+			"Search(*)",
+			"Edit(*)",
+			"Write(*)",
+			"Bash(sed:*)",
+			"Bash(cargo check:*)",
+			"Bash(mv:*)",
+			"Bash(cargo clean:*)",
+			"WebFetch(domain:v2.tauri.app)",
+			"Bash(find src -name \"*VFX*\" -type f)",
+			"WebFetch(domain:*)",
+			"Bash(npm install:*)",
+			"Bash(mkdir:*)",
+			"Bash(npx:*)"
+		],
+		"deny": ["Bash(*dev*)", "Bash(*build*)"]
+	}
+}
