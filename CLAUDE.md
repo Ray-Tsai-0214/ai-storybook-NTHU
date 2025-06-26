@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -156,6 +158,7 @@ Key entities to implement:
 **IMPORTANT**: Each component should be split into separate files for better maintainability and reusability. Do NOT write all components in page.tsx files.
 
 **Component Organization Guidelines**:
+
 - Split page components into logical sub-components in `/components` directory
 - Create component-specific directories when components have multiple related files
 - Use descriptive component names that indicate their purpose
@@ -163,6 +166,7 @@ Key entities to implement:
 - Reusable UI logic should be extracted into separate components
 
 **Implemented Component Structure**:
+
 ```
 components/
 ├── profile/
@@ -181,6 +185,7 @@ components/
 ```
 
 **Page Structure**:
+
 ```
 app/
 ├── profile/settings/page.tsx      # Profile settings (✅ Refactored with components)
