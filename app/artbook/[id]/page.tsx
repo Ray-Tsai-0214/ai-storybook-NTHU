@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/lib/stores/auth-store";
 import { toast } from "sonner";
 import { Heart, Eye, MessageCircle, Calendar, ArrowLeft } from "lucide-react";
@@ -64,11 +65,7 @@ export default function ArtbookDetail({ params }: PageProps) {
   // Unwrap params using React.use()
   const { id } = use(params);
 
-  useEffect(() => {
-    fetchArtbook();
-  }, [id]);
-
-  const fetchArtbook = async () => {
+  const fetchArtbook = useCallback(async () => {
     try {
       const response = await fetch(`/api/artbooks/${id}`);
       if (!response.ok) {
@@ -98,7 +95,11 @@ export default function ArtbookDetail({ params }: PageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user, router]);
+
+  useEffect(() => {
+    fetchArtbook();
+  }, [fetchArtbook]);
 
   const handleLike = async () => {
     if (!user) {
@@ -239,9 +240,11 @@ export default function ArtbookDetail({ params }: PageProps) {
           {/* Page Image */}
           <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
             {currentPageData?.picture ? (
-              <img 
+              <Image 
                 src={currentPageData.picture} 
                 alt={`Page ${currentPage}`}
+                width={800}
+                height={600}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -322,9 +325,11 @@ export default function ArtbookDetail({ params }: PageProps) {
                   )}
                 >
                   {page.picture ? (
-                    <img 
+                    <Image 
                       src={page.picture} 
                       alt={`Page ${page.pageNumber}`}
+                      width={200}
+                      height={150}
                       className="w-full h-full object-cover"
                     />
                   ) : (

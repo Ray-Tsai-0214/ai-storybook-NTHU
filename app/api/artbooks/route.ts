@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     const authorId = searchParams.get('authorId');
     const isPublic = searchParams.get('isPublic');
 
-    const where: Record<string, any> = {};
+    const where: Record<string, unknown> = {};
     
     if (category && ['ADVENTURE', 'HORROR', 'ACTION', 'ROMANTIC', 'FIGURE'].includes(category.toUpperCase())) {
       where.category = category.toUpperCase();
