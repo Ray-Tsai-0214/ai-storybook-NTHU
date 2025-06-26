@@ -151,6 +151,44 @@ Key entities to implement:
 
 ## Development Notes
 
+### Component Architecture
+
+**IMPORTANT**: Each component should be split into separate files for better maintainability and reusability. Do NOT write all components in page.tsx files.
+
+**Component Organization Guidelines**:
+- Split page components into logical sub-components in `/components` directory
+- Create component-specific directories when components have multiple related files
+- Use descriptive component names that indicate their purpose
+- Keep page.tsx files focused on layout and data fetching
+- Reusable UI logic should be extracted into separate components
+
+**Implemented Component Structure**:
+```
+components/
+├── profile/
+│   ├── profile-info-form.tsx      # Profile picture and name form (✅ Complete)
+│   └── password-change-form.tsx   # Password change form (✅ Complete)
+├── artbook/
+│   ├── artbook-metadata-form.tsx  # Title, description, category (✅ Complete)
+│   ├── page-preview.tsx           # Page image preview (✅ Complete)
+│   ├── story-outline-section.tsx  # Story generation section (✅ Complete)
+│   ├── image-generation-section.tsx # Image generation section (✅ Complete)
+│   └── audio-generation-section.tsx # Audio generation section (✅ Complete)
+├── discovery/
+│   ├── filters-bar.tsx            # Category and sort filters (✅ Complete)
+│   └── artbook-card.tsx           # Individual artbook display card (✅ Complete)
+└── ui/                           # Reusable UI components (shadcn/ui)
+```
+
+**Page Structure**:
+```
+app/
+├── profile/settings/page.tsx      # Profile settings (✅ Refactored with components)
+├── create/page.tsx                # Artbook creation (⚠️ Needs refactoring)
+├── discovery/page.tsx             # Browse artbooks (✅ Complete with components)
+└── artbook/[id]/page.tsx          # Individual artbook view (📝 TODO)
+```
+
 ### TypeScript Requirement
 
 Always run `npx tsc --noEmit` after editing any TypeScript file to ensure type safety.

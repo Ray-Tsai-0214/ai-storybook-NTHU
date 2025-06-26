@@ -2,32 +2,54 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wand2, Plus, Minus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/stores/auth-store";
 
 interface PageData {
   outlinePrompt: string;
   storyOutline: string;
   coverPrompt: string;
   audioPrompt: string;
+  imageUrl: string;
+  audioData: string;
+}
+
+interface ArtbookData {
+  title: string;
+  description: string;
+  category: string;
+  coverPhoto: string;
 }
 
 export default function Create() {
-  const t = useTranslations("nav");
   const router = useRouter();
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(6);
+  const [totalPages, setTotalPages] = useState(4);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Artbook metadata
+  const [artbookData, setArtbookData] = useState<ArtbookData>({
+    title: "",
+    description: "",
+    category: "",
+    coverPhoto: "",
+  });
   
   // Initialize pages data
   const [pagesData, setPagesData] = useState<PageData[]>(
-    Array(6).fill(null).map(() => ({
+    Array(4).fill(null).map(() => ({
       outlinePrompt: "",
       storyOutline: "",
       coverPrompt: "",
       audioPrompt: "",
+      imageUrl: "",
+      audioData: "",
     }))
   );
 
@@ -37,6 +59,8 @@ export default function Create() {
     storyOutline: "",
     coverPrompt: "",
     audioPrompt: "",
+    imageUrl: "",
+    audioData: "",
   };
 
   // Update current page data
@@ -51,11 +75,17 @@ export default function Create() {
 
   // Add new page
   const addPage = () => {
+    if (totalPages >= 10) {
+      toast.error("Maximum 10 pages allowed");
+      return;
+    }
     setPagesData([...pagesData, {
       outlinePrompt: "",
       storyOutline: "",
       coverPrompt: "",
       audioPrompt: "",
+      imageUrl: "",
+      audioData: "",
     }]);
     setTotalPages(totalPages + 1);
   };
@@ -82,11 +112,144 @@ export default function Create() {
     }
   };
 
+  // Generate image for current page
+  const generateImage = async () => {
+    const prompt = currentPageData.coverPrompt;
+    if (!prompt.trim()) {
+      toast.error("Please enter an image prompt first");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      updatePageData('imageUrl', data.imageUrl);
+      toast.success("Image generated successfully!");
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate image");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Generate audio for current page
+  const generateAudio = async () => {
+    const text = currentPageData.storyOutline || currentPageData.audioPrompt;
+    if (!text.trim()) {
+      toast.error("Please enter story content or audio prompt first");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-audio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate audio');
+      }
+
+      const data = await response.json();
+      updatePageData('audioData', data.audioData);
+      toast.success("Audio generated successfully!");
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate audio");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+
+  // Save artbook
+  const saveArtbook = async () => {
+    if (!user) {
+      toast.error("Please sign in to save artbook");
+      return;
+    }
+
+    if (!artbookData.title.trim()) {
+      toast.error("Please enter an artbook title");
+      return;
+    }
+
+    if (!artbookData.category) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    // Validate that at least one page has content
+    const hasContent = pagesData.some(page => page.storyOutline.trim());
+    if (!hasContent) {
+      toast.error("Please add content to at least one page");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const pages = pagesData
+        .map((page, index) => ({
+          pageNumber: index + 1,
+          content: page.storyOutline,
+          picture: page.imageUrl,
+          audio: page.audioData,
+        }))
+        .filter(page => page.content.trim()); // Only include pages with content
+
+      const response = await fetch('/api/artbooks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: artbookData.title,
+          description: artbookData.description,
+          category: artbookData.category.toUpperCase(),
+          coverPhoto: artbookData.coverPhoto,
+          isPublic: true,
+          pages,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save artbook');
+      }
+
+      const data = await response.json();
+      toast.success("Artbook saved successfully!");
+      router.push(`/artbook/${data.artbook.id}`);
+    } catch (error) {
+      console.error('Error saving artbook:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to save artbook");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Handle complete editing
   const handleCompleteEditing = () => {
-    // Save the artbook data here if needed
-    // Navigate to artbook preview page
-    router.push("/artbook");
+    saveArtbook();
   };
 
   // Generate story outline using OpenAI
@@ -143,11 +306,68 @@ export default function Create() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Please sign in</h2>
+          <p className="text-muted-foreground">You need to be signed in to create artbooks.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Main Content Area */}
       <div className="pb-48">
         <div className="max-w-[1200px] mx-auto">{/* Increased max width */}
+          {/* Artbook Metadata Form */}
+          <div className="mb-8 p-6 bg-gray-50 rounded-lg">
+            <h2 className="text-xl font-semibold mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+              Artbook Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={artbookData.title}
+                  onChange={(e) => setArtbookData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter artbook title"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category *</Label>
+                <Select 
+                  value={artbookData.category} 
+                  onValueChange={(value) => setArtbookData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="adventure">Adventure</SelectItem>
+                    <SelectItem value="horror">Horror</SelectItem>
+                    <SelectItem value="action">Action</SelectItem>
+                    <SelectItem value="romantic">Romantic</SelectItem>
+                    <SelectItem value="figure">Figure</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  id="description"
+                  value={artbookData.description}
+                  onChange={(e) => setArtbookData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter artbook description (optional)"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Page Controls */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -224,13 +444,22 @@ export default function Create() {
               </h2>
               
               <div className="flex flex-col items-center gap-5">
-                {/* Page Image Placeholder */}
-                <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-32 h-40 bg-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                      <div className="w-20 h-24 bg-white rounded" />
+                {/* Page Image */}
+                <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center overflow-hidden">
+                  {currentPageData.imageUrl ? (
+                    <img 
+                      src={currentPageData.imageUrl} 
+                      alt={`Page ${currentPage}`}
+                      className="w-full h-full object-cover rounded-[31px]"
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-32 h-40 bg-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                        <div className="w-20 h-24 bg-white rounded" />
+                      </div>
+                      <p className="text-gray-600">No image generated yet</p>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 {/* Page Number */}
@@ -303,13 +532,19 @@ export default function Create() {
                 
                 {/* Action Buttons */}
                 <div className="flex gap-2.5">
-                  <button className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                          style={{ fontFamily: 'Syne, sans-serif' }}>
+                  <button 
+                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
                     上傳圖片
                   </button>
-                  <button className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                          style={{ fontFamily: 'Syne, sans-serif' }}>
-                    生成封面
+                  <button 
+                    onClick={generateImage}
+                    disabled={isGenerating || !currentPageData.coverPrompt.trim()}
+                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
+                    {isGenerating ? "生成中..." : "生成封面"}
                   </button>
                 </div>
               </div>
@@ -329,15 +564,31 @@ export default function Create() {
                   style={{ fontFamily: 'Playfair Display, serif' }}
                 />
                 
+                {/* Audio Controls */}
+                {currentPageData.audioData && (
+                  <div className="mb-4">
+                    <audio controls className="w-full">
+                      <source src={currentPageData.audioData} type="audio/mp3" />
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex gap-2.5">
-                  <button className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                          style={{ fontFamily: 'Syne, sans-serif' }}>
+                  <button 
+                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
                     上傳音檔
                   </button>
-                  <button className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                          style={{ fontFamily: 'Syne, sans-serif' }}>
-                    生成音樂
+                  <button 
+                    onClick={generateAudio}
+                    disabled={isGenerating || (!currentPageData.storyOutline.trim() && !currentPageData.audioPrompt.trim())}
+                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
+                    {isGenerating ? "生成中..." : "生成音樂"}
                   </button>
                 </div>
               </div>
@@ -378,16 +629,25 @@ export default function Create() {
           )}
         </div>
         
-        {/* Export Button */}
+        {/* Save/Export Button */}
         <div className="p-2.5">
           <button 
-            className="w-[437px] h-16 bg-white border-2 border-black rounded-[20px] text-2xl text-black hover:shadow-lg transition-all"
+            onClick={saveArtbook}
+            disabled={isSaving || !artbookData.title.trim() || !artbookData.category}
+            className="w-[437px] h-16 bg-white border-2 border-black rounded-[20px] text-2xl text-black hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               fontFamily: 'Syne, sans-serif',
               boxShadow: '10px 10px 0px #FB64B6'
             }}
           >
-            輸出繪本
+            {isSaving ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                保存中...
+              </div>
+            ) : (
+              "保存繪本"
+            )}
           </button>
         </div>
       </div>
