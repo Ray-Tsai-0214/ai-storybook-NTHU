@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Heart, AlertTriangle, Clock, BookOpen, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -44,9 +45,11 @@ export default function ArtbookPreview() {
         <div className="relative z-10 flex h-full">
           {/* Book Cover */}
           <div className="relative w-[508px] h-full">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=508&h=631&fit=crop"
               alt="Fairy Tale Story Cover"
+              width={508}
+              height={631}
               className="w-full h-full object-cover"
               style={{ filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))' }}
             />

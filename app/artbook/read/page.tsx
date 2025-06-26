@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, X, Pause, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 export default function ReadArtbook() {
   const router = useRouter();
@@ -65,12 +64,6 @@ export default function ReadArtbook() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatRemainingTime = (current: number, total: number) => {
-    const remaining = total - current;
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
-    return `-${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Auto play simulation
   useEffect(() => {
