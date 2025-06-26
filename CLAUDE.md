@@ -9,9 +9,11 @@
 ## 📋 重要指令
 ```bash
 # 開發環境
-npm run dev       # 啟動開發伺服器 (port 3000)
-npm run build     # 建構生產版本
-npm run lint      # 執行程式碼檢查
+npm run dev --turbopack  # 啟動開發伺服器 with Turbopack (port 3000)
+npm run build            # 建構生產版本
+npm run start            # 啟動生產伺服器
+npm run lint             # 執行程式碼檢查
+npx tsc --noEmit        # TypeScript 類型檢查
 
 # Git 工作流程
 git pull origin master    # 開始工作前同步
@@ -24,20 +26,31 @@ git push origin master    # 推送到遠端
 ```
 /app              # Next.js App Router 頁面
   /api            # API 路由
+    /auth         # Better Auth 認證端點
+    /artbooks     # 繪本 CRUD 操作
+    /user         # 用戶資料管理
     /generate-outline          # 故事大綱生成 (GPT-4)
     /generate-story           # 完整故事生成 (GPT-4)
     /generate-image           # 圖片生成 (DALL-E 3)
     /generate-consistent-image # 一致性圖片生成
+    /generate-audio           # 音頻生成 (TTS)
     /extract-character-info    # 角色特徵提取
   /artbook        # 繪本相關頁面
   /create         # 創建繪本頁面
   /discovery      # 探索頁面
   /profile        # 個人檔案頁面
+  /login          # 登入頁面
+  /signup         # 註冊頁面
 /components       # React 元件
   /ui             # shadcn/ui 元件庫
-/docs             # 專案文檔
-/i18n             # 國際化設定
+  /auth           # 認證相關組件
+  /artbook        # 繪本創作組件
+  /discovery      # 探索頁面組件
+  /profile        # 個人資料組件
 /lib              # 工具函數和 API 客戶端
+  /api            # OpenAI API 整合
+  /stores         # Zustand 狀態管理
+/prisma           # 資料庫 schema 和遷移
 /messages         # 翻譯檔案 (en.json, zh-TW.json)
 ```
 
@@ -71,33 +84,43 @@ git push origin master    # 推送到遠端
   - 無邊框純淨插畫
   - 卡通風格優化
 
+### 音頻生成 (TTS-1)
+- **語音合成** (`/api/generate-audio`)
+  - 模型: TTS-1 with 'alloy' voice
+  - 支援中英文內容
+
 ### 環境變數
 - `OPENAI_API_KEY` (必需)
+- `DATABASE_URL` (NeonDB PostgreSQL)
+- `BETTER_AUTH_SECRET` (認證加密金鑰)
 
 ## 📈 當前進度
 ### ✅ 已完成功能
 - [x] 基本專案架構和路由設定
+- [x] **用戶認證系統 (Better Auth)** ⭐ 完成
+- [x] **資料庫整合 (Prisma + NeonDB)** ⭐ 完成
 - [x] 多語言支援框架 (中英文)
 - [x] 側邊欄可收合功能 (270px ↔ 70px)
 - [x] 創建繪本頁面 (多頁導航系統)
 - [x] AI 故事生成整合 (GPT-4)
-- [x] **圖片生成整合 (DALL-E 3)** ⭐ 新增
-- [x] **圖片一致性系統** ⭐ 新增
+- [x] **圖片生成整合 (DALL-E 3)** ⭐ 完成
+- [x] **圖片一致性系統** ⭐ 完成
+- [x] **音頻生成整合 (TTS-1)** ⭐ 完成
 - [x] 預覽和閱讀界面
 - [x] 新設計系統實施 (橘色主題)
+- [x] **社交功能 (按讚/評論)** ⭐ 完成
+- [x] **個人檔案頁面** ⭐ 完成
 
 ### 🚧 進行中任務
-- [ ] 使用者認證系統 (Better Auth)
-- [ ] 語音合成功能 (TTS)
-- [ ] 資料庫模型設計 (Prisma + NeonDB)
+- [ ] AWS S3 媒體儲存整合
+- [ ] PDF/PNG 匯出功能
+- [ ] 使用限制 (10本/天, 10頁/本)
 
 ### 📅 待開發功能
-- [ ] AWS S3 媒體儲存
-- [ ] 使用限制 (10本/天, 10頁/本)
-- [ ] 探索頁面 (搜尋/篩選)
-- [ ] 社交功能 (按讚/評論)
-- [ ] PDF/PNG 匯出
-- [ ] 個人檔案頁面
+- [ ] 探索頁面進階篩選功能
+- [ ] 繪本分享連結生成
+- [ ] 管理員後台
+- [ ] 行動裝置優化
 
 ## 🔥 核心功能詳解
 ### 圖片一致性系統
@@ -112,6 +135,30 @@ git push origin master    # 推送到遠端
 - **實時預覽**：生成的圖片即時顯示
 - **重新生成**：圖片右上角一鍵重生成
 - **智能提示**：不同頁面提供相應的輸入指引
+- **用戶認證整合**：需登入才能創建
+- **資料庫儲存**：完整的繪本資料保存
+
+### 組件架構
+**重要**: 每個組件都分割成獨立檔案以提高可維護性和重用性
+
+```
+components/
+├── auth/
+│   └── user-nav.tsx              # 用戶導航組件 (✅ 完成)
+├── profile/
+│   ├── profile-info-form.tsx     # 個人資料表單 (✅ 完成)
+│   └── password-change-form.tsx  # 密碼變更表單 (✅ 完成)
+├── artbook/
+│   ├── artbook-metadata-form.tsx # 繪本元資料表單 (✅ 完成)
+│   ├── page-preview.tsx          # 頁面圖片預覽 (✅ 完成)
+│   ├── story-outline-section.tsx # 故事生成區域 (✅ 完成)
+│   ├── image-generation-section.tsx # 圖片生成區域 (✅ 完成)
+│   └── audio-generation-section.tsx # 音頻生成區域 (✅ 完成)
+├── discovery/
+│   ├── filters-bar.tsx           # 分類和排序篩選 (✅ 完成)
+│   └── artbook-card.tsx          # 繪本卡片 (✅ 完成)
+└── ui/                          # Reusable UI components (shadcn/ui)
+```
 
 ## 🐛 已知問題
 - [x] ~~圖片生成帶有書本邊框問題~~ (已解決)
@@ -119,13 +166,15 @@ git push origin master    # 推送到遠端
 - [ ] 行動裝置響應式設計待優化
 
 ## 💡 開發注意事項
-1. **環境變數**: 確保設定 `OPENAI_API_KEY`
+1. **環境變數**: 確保設定 `OPENAI_API_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET`
 2. **圖片生成 PROMPT**: 避免使用 "children's book illustration" 等會產生邊框的詞彙
 3. **圖片一致性**: 第1頁描述要詳細，包含角色外觀特徵
-4. **Git 提交**: 使用描述性的提交訊息
-5. **程式碼風格**: 遵循現有的程式碼慣例
-6. **測試**: 在推送前確保功能正常運作
-7. **文檔更新**: 重要更改請同步更新此文件
+4. **TypeScript**: 編輯任何 TypeScript 檔案後執行 `npx tsc --noEmit`
+5. **組件架構**: 每個組件應分割成獨立檔案，避免在 page.tsx 中寫所有組件
+6. **Git 提交**: 使用描述性的提交訊息
+7. **程式碼風格**: 遵循現有的程式碼慣例
+8. **測試**: 在推送前確保功能正常運作
+9. **文檔更新**: 重要更改請同步更新此文件
 
 ## 🎯 圖片生成最佳實踐
 ### 推薦 PROMPT 關鍵詞
@@ -141,6 +190,22 @@ git push origin master    # 推送到遠端
 第1頁（封面）：[主角詳細外觀], [動作/姿勢], [環境背景], cartoon style, colorful, clean flat illustration, no borders
 後續頁面：[場景描述], [動作], vibrant colors, cartoon illustration, clean artwork, no frames
 ```
+
+## 🔐 認證系統
+### Better Auth 整合
+- **登入/註冊**: 完整的用戶認證流程
+- **會話管理**: 安全的會話處理
+- **用戶狀態**: Zustand store 管理認證狀態
+- **保護路由**: 創建繪本需要登入
+
+### 資料庫 Schema (Prisma)
+主要實體：
+- **Users**: 用戶資料
+- **Artbooks**: 繪本資料 (標題、內容、可見性)
+- **Pages**: 繪本頁面 (故事文字、圖片URL、音頻URL)
+- **Likes**: 用戶按讚關係
+- **Comments**: 評論系統 (支援回覆)
+- **Views**: 瀏覽量追蹤
 
 ## 📝 工作日誌
 ### 2025-06-26 (第一次工作階段)
@@ -166,9 +231,15 @@ git push origin master    # 推送到遠端
   - 移除會產生書本邊框的關鍵詞
   - 優化 PROMPT 模板
   - 制定圖片生成最佳實踐指南
+- ✅ **合併遠端更新**
+  - 整合用戶認證系統 (Better Auth)
+  - 整合資料庫功能 (Prisma + NeonDB)
+  - 整合音頻生成功能 (TTS-1)
+  - 整合社交功能 (按讚/評論)
+  - 整合組件架構重構
 
 ---
-**最後更新**: 2025-06-26 18:00
+**最後更新**: 2025-06-26 18:30
 **更新者**: Claude Code
 
 > 💡 **使用提示**: 每次開始新的工作階段時，請先查看此文件了解最新進度。完成重要更改後，請更新相關章節並提交。

@@ -11,11 +11,14 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/app-layout";
+import { useAuth } from "@/lib/stores/auth-store";
+import { UserNav } from "@/components/auth/user-nav";
+import Link from "next/link";
 
 export function Sidebar() {
   const [open, setOpen] = useState(false);
   const { isCollapsed, setIsCollapsed } = useSidebar();
-  const t = useTranslations("auth");
+  const { user, isLoading, signOut } = useAuth();
   const navT = useTranslations("nav");
   const pathname = usePathname();
   
@@ -62,26 +65,48 @@ export function Sidebar() {
           </div>
         </div>
         
-        {/* User Profile Section */}
-        <div className={cn(
-          "py-6",
-          isCollapsed ? "px-2.5" : "px-8"
-        )}>
+        {/* User Profile Section - Only show if logged in */}
+        {user && (
           <div className={cn(
-            "flex items-center",
-            isCollapsed ? "justify-center" : "gap-3"
+            "py-6",
+            isCollapsed ? "px-2.5" : "px-8"
           )}>
-            <Avatar className="h-[50px] w-[50px] flex-shrink-0">
-              <AvatarImage src="/placeholder-avatar.jpg" alt="Shelly" />
-              <AvatarFallback>S</AvatarFallback>
-            </Avatar>
-            {!isCollapsed && (
-              <span className="text-base font-normal text-[#15171C]" style={{ fontFamily: 'Syne, sans-serif' }}>
-                Shelly
-              </span>
-            )}
+            <div className={cn(
+              "flex items-center",
+              isCollapsed ? "justify-center" : "gap-3"
+            )}>
+              <Avatar className="h-[50px] w-[50px] flex-shrink-0">
+                <AvatarImage src={user.image || ""} alt={user.name || ""} />
+                <AvatarFallback>
+                  {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              {!isCollapsed && (
+                <span className="text-base font-normal text-[#15171C]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                  {user.name || user.email}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Loading State */}
+        {isLoading && (
+          <div className={cn(
+            "py-6",
+            isCollapsed ? "px-2.5" : "px-8"
+          )}>
+            <div className={cn(
+              "flex items-center",
+              isCollapsed ? "justify-center" : "gap-3"
+            )}>
+              <div className="h-[50px] w-[50px] rounded-full bg-muted animate-pulse flex-shrink-0" />
+              {!isCollapsed && (
+                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+              )}
+            </div>
+          </div>
+        )}
         
         <div className={cn(
           "flex-1 overflow-auto",
@@ -107,19 +132,51 @@ export function Sidebar() {
           </div>
         )}
         
-        {/* Logout button at bottom */}
+        {/* Auth buttons at bottom */}
         <div className={cn(
           isCollapsed ? "p-2.5" : "p-8"
         )}>
-          <Button 
-            className={cn(
-              "w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base",
-              isCollapsed && "px-2"
-            )} 
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
-            {isCollapsed ? "↩" : "Logout"}
-          </Button>
+          {user ? (
+            <Button 
+              onClick={signOut}
+              className={cn(
+                "w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base",
+                isCollapsed && "px-2"
+              )} 
+              style={{ fontFamily: 'Syne, sans-serif' }}
+            >
+              {isCollapsed ? "↩" : "Logout"}
+            </Button>
+          ) : !isLoading ? (
+            <div className={cn(
+              "flex",
+              isCollapsed ? "flex-col gap-2" : "gap-2"
+            )}>
+              <Link href="/login" className={isCollapsed ? "w-full" : "flex-1"}>
+                <Button 
+                  variant="outline" 
+                  className={cn(
+                    "w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white",
+                    isCollapsed && "px-2"
+                  )}
+                  style={{ fontFamily: 'Syne, sans-serif' }}
+                >
+                  {isCollapsed ? "←" : "Sign In"}
+                </Button>
+              </Link>
+              <Link href="/signup" className={isCollapsed ? "w-full" : "flex-1"}>
+                <Button 
+                  className={cn(
+                    "w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base",
+                    isCollapsed && "px-2"
+                  )}
+                  style={{ fontFamily: 'Syne, sans-serif' }}
+                >
+                  {isCollapsed ? "+" : "Sign Up"}
+                </Button>
+              </Link>
+            </div>
+          ) : null}
         </div>
       </aside>
 
@@ -142,16 +199,32 @@ export function Sidebar() {
                 </div>
               </div>
               
-              {/* User Profile Section */}
-              <div className="px-8 py-6">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-[50px] w-[50px]">
-                    <AvatarImage src="/placeholder-avatar.jpg" alt="Shelly" />
-                    <AvatarFallback>S</AvatarFallback>
-                  </Avatar>
-                  <span className="text-base font-normal text-[#15171C]" style={{ fontFamily: 'Syne, sans-serif' }}>Shelly</span>
+              {/* User Profile Section - Only show if logged in */}
+              {user && (
+                <div className="px-8 py-6">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-[50px] w-[50px]">
+                      <AvatarImage src={user.image || ""} alt={user.name || ""} />
+                      <AvatarFallback>
+                        {user.name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-base font-normal text-[#15171C]" style={{ fontFamily: 'Syne, sans-serif' }}>
+                      {user.name || user.email}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
+              
+              {/* Loading State */}
+              {isLoading && (
+                <div className="px-8 py-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-[50px] w-[50px] rounded-full bg-muted animate-pulse" />
+                    <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                  </div>
+                </div>
+              )}
               
               <div className="px-8">
                 <SidebarNav onItemClick={() => setOpen(false)} />
@@ -170,11 +243,42 @@ export function Sidebar() {
                 </div>
               </div>
               
-              {/* Logout button at bottom */}
+              {/* Auth buttons at bottom */}
               <div className="absolute bottom-0 left-0 right-0 p-8">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base" style={{ fontFamily: 'Syne, sans-serif' }} onClick={() => setOpen(false)}>
-                  Logout
-                </Button>
+                {user ? (
+                  <Button 
+                    onClick={() => {
+                      signOut();
+                      setOpen(false);
+                    }}
+                    className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base" 
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
+                    Logout
+                  </Button>
+                ) : !isLoading ? (
+                  <div className="flex flex-col gap-2">
+                    <Link href="/login">
+                      <Button 
+                        variant="outline" 
+                        className="w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white"
+                        style={{ fontFamily: 'Syne, sans-serif' }}
+                        onClick={() => setOpen(false)}
+                      >
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link href="/signup">
+                      <Button 
+                        className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base"
+                        style={{ fontFamily: 'Syne, sans-serif' }}
+                        onClick={() => setOpen(false)}
+                      >
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </SheetContent>
           </Sheet>
@@ -183,10 +287,7 @@ export function Sidebar() {
           
           <LanguageSwitcher />
           
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+          <UserNav />
         </header>
       </div>
 
@@ -202,10 +303,7 @@ export function Sidebar() {
           
           <LanguageSwitcher />
           
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+          <UserNav />
         </header>
       </div>
     </>

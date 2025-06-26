@@ -66,7 +66,7 @@ export async function generateStoryImage(prompt: string) {
       quality: AI_CONFIG.imageQuality,
     });
     
-    return response.data[0]?.url || '';
+    return response.data?.[0]?.url || '';
   } catch (error) {
     console.error('Error generating image:', error);
     throw new Error('Failed to generate image');

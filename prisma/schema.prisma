@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Categories enum
+enum Category {
+  ADVENTURE
+  HORROR
+  ACTION
+  ROMANTIC
+  FIGURE
+}
+
+// Better Auth required tables
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?   // Profile picture as base64 or URL
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relationships
+  sessions Session[]
+  accounts Account[]
+  artbooks Artbook[]
+  likes    Like[]
+  comments Comment[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  accountId         String
+  providerId        String
+  userId            String
+  accessToken       String?
+  refreshToken      String?
+  idToken           String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verifications")
+}
+
+// Artbook models
+model Artbook {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  coverPhoto  String?   // base64 or URL
+  category    Category
+  isPublic    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Author relationship
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Related models
+  pages       Page[]
+  post        Post?
+  
+  @@map("artbooks")
+}
+
+model Page {
+  id        String   @id @default(cuid())
+  pageNumber Int
+  content   String   // Story text content
+  picture   String?  // Image URL or base64
+  audio     String?  // Audio URL or base64
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Artbook relationship
+  artbookId String
+  artbook   Artbook  @relation(fields: [artbookId], references: [id], onDelete: Cascade)
+  
+  @@unique([artbookId, pageNumber])
+  @@map("pages")
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  views     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // One-to-one with Artbook
+  artbookId String    @unique
+  artbook   Artbook   @relation(fields: [artbookId], references: [id], onDelete: Cascade)
+  
+  // Social features
+  likes     Like[]
+  comments  Comment[]
+  
+  @@map("posts")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // User relationship
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Post relationship
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // User relationship
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Post relationship
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Self-referencing for replies
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  
+  @@map("comments")
+}
