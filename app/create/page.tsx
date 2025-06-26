@@ -12,6 +12,12 @@ interface PageData {
   storyOutline: string;
   coverPrompt: string;
   audioPrompt: string;
+  generatedImage?: string;
+}
+
+interface ArtbookData {
+  characterInfo?: string;
+  firstImagePrompt?: string;
 }
 
 export default function Create() {
@@ -20,6 +26,10 @@ export default function Create() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(6);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
+  // Artbook-level data for consistency
+  const [artbookData, setArtbookData] = useState<ArtbookData>({});
   
   // Initialize pages data
   const [pagesData, setPagesData] = useState<PageData[]>(
@@ -28,6 +38,7 @@ export default function Create() {
       storyOutline: "",
       coverPrompt: "",
       audioPrompt: "",
+      generatedImage: undefined,
     }))
   );
 
@@ -37,6 +48,7 @@ export default function Create() {
     storyOutline: "",
     coverPrompt: "",
     audioPrompt: "",
+    generatedImage: undefined,
   };
 
   // Update current page data
@@ -56,6 +68,7 @@ export default function Create() {
       storyOutline: "",
       coverPrompt: "",
       audioPrompt: "",
+      generatedImage: undefined,
     }]);
     setTotalPages(totalPages + 1);
   };
@@ -87,6 +100,115 @@ export default function Create() {
     // Save the artbook data here if needed
     // Navigate to artbook preview page
     router.push("/artbook");
+  };
+
+  // Extract character info from first image
+  const extractCharacterInfo = async (firstPrompt: string, storyOutline: string) => {
+    try {
+      const response = await fetch('/api/extract-character-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstImagePrompt: firstPrompt,
+          storyOutline: storyOutline
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to extract character info');
+      }
+
+      const data = await response.json();
+      return data.characterInfo;
+    } catch (error) {
+      console.error('Error extracting character info:', error);
+      return null;
+    }
+  };
+
+  // Generate image using DALL-E 3 with consistency
+  const generateImage = async (pageIndex: number) => {
+    const prompt = pagesData[pageIndex].coverPrompt;
+    if (!prompt.trim()) {
+      toast.error("請先輸入圖片生成的提示詞");
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const isFirstImage = pageIndex === 0;
+      let apiEndpoint = '/api/generate-image';
+      let requestBody: any = {
+        prompt,
+        style: "colorful cartoon style"
+      };
+
+      // For first image, use regular generation and extract character info
+      if (isFirstImage) {
+        const response = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to generate image');
+        }
+
+        const data = await response.json();
+        
+        // Update the generated image for current page
+        updatePageData('generatedImage', data.imageUrl);
+        
+        // Extract character info and store for future consistency
+        const characterInfo = await extractCharacterInfo(prompt, pagesData[pageIndex].storyOutline);
+        setArtbookData({
+          characterInfo: characterInfo,
+          firstImagePrompt: prompt
+        });
+        
+        toast.success("封面圖片生成成功！角色特徵已記錄");
+      } else {
+        // For subsequent images, use consistent generation
+        apiEndpoint = '/api/generate-consistent-image';
+        requestBody = {
+          prompt,
+          characterInfo: artbookData.characterInfo,
+          pageNumber: pageIndex + 1,
+          style: "colorful cartoon style"
+        };
+
+        const response = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to generate consistent image');
+        }
+
+        const data = await response.json();
+        
+        // Update the generated image for current page
+        updatePageData('generatedImage', data.imageUrl);
+        
+        toast.success("圖片生成成功！已保持角色一致性");
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast.error(error instanceof Error ? error.message : "生成圖片時發生錯誤，請稍後再試");
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   // Generate story outline using OpenAI
@@ -224,13 +346,39 @@ export default function Create() {
               </h2>
               
               <div className="flex flex-col items-center gap-5">
-                {/* Page Image Placeholder */}
-                <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-32 h-40 bg-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                      <div className="w-20 h-24 bg-white rounded" />
+                {/* Page Image Placeholder or Generated Image */}
+                <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center overflow-hidden">
+                  {currentPageData.generatedImage ? (
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={currentPageData.generatedImage} 
+                        alt={`第${currentPage}頁圖片`}
+                        className="w-full h-full object-cover rounded-[31px]"
+                      />
+                      {/* Regenerate button overlay */}
+                      <button
+                        onClick={() => generateImage(currentPage - 1)}
+                        disabled={isGeneratingImage}
+                        className="absolute top-4 right-4 w-12 h-12 bg-[#FCCEE8] border-2 border-black rounded-2xl flex items-center justify-center hover:bg-[#FCB8E0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                        title="重新生成圖片"
+                      >
+                        {isGeneratingImage ? (
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-6 h-6" />
+                        )}
+                      </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-32 h-40 bg-blue-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                        <div className="w-20 h-24 bg-white rounded" />
+                      </div>
+                      <p className="text-gray-600 mt-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+                        輸入提示詞並點擊「生成封面」<br />來生成這一頁的圖片
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Page Number */}
@@ -281,23 +429,43 @@ export default function Create() {
                 />
               </div>
 
+              {/* Character Info Display */}
+              {artbookData.characterInfo && (
+                <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-[20px]">
+                  <h4 className="text-lg font-semibold text-orange-800 mb-2" style={{ fontFamily: 'Comic Neue, cursive' }}>
+                    📚 角色特徵記錄
+                  </h4>
+                  <p className="text-sm text-orange-700 whitespace-pre-line" style={{ fontFamily: 'Syne, sans-serif' }}>
+                    {artbookData.characterInfo}
+                  </p>
+                </div>
+              )}
+
               {/* Book Cover Section */}
               <div className="space-y-4">
                 <h3 className="text-[40px] leading-[56px] text-black" style={{ fontFamily: 'Comic Neue, cursive' }}>
-                  繪本封面
+                  {currentPage === 1 ? '繪本封面' : `第${currentPage}頁圖片`}
                 </h3>
                 
                 {/* Cover Prompt Input */}
                 <div className="relative">
                   <textarea
-                    placeholder="請輸入繪本封面提示詞"
+                    placeholder={currentPage === 1 ? "請詳細描述主角外觀（如：橘色小貓咪穿藍色球衣打籃球）" : "請描述這一頁的場景（系統會自動保持角色一致性）"}
                     value={currentPageData.coverPrompt}
                     onChange={(e) => updatePageData('coverPrompt', e.target.value)}
                     className="w-full h-[76px] p-4 pr-16 bg-white border-2 border-black rounded-[20px] text-base placeholder:text-[#99A1AF] resize-none"
                     style={{ fontFamily: 'Playfair Display, serif' }}
                   />
-                  <button className="absolute right-4 top-4 w-11 h-11 bg-[#FCCEE8] border-2 border-black rounded-2xl flex items-center justify-center hover:bg-[#FCB8E0] transition-colors">
-                    <Wand2 className="w-6 h-6" />
+                  <button 
+                    onClick={() => generateImage(currentPage - 1)}
+                    disabled={isGeneratingImage}
+                    className="absolute right-4 top-4 w-11 h-11 bg-[#FCCEE8] border-2 border-black rounded-2xl flex items-center justify-center hover:bg-[#FCB8E0] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingImage ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-6 h-6" />
+                    )}
                   </button>
                 </div>
                 
@@ -307,9 +475,13 @@ export default function Create() {
                           style={{ fontFamily: 'Syne, sans-serif' }}>
                     上傳圖片
                   </button>
-                  <button className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                          style={{ fontFamily: 'Syne, sans-serif' }}>
-                    生成封面
+                  <button 
+                    onClick={() => generateImage(currentPage - 1)}
+                    disabled={isGeneratingImage}
+                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'Syne, sans-serif' }}
+                  >
+                    {isGeneratingImage ? '生成中...' : (currentPage === 1 ? '生成封面' : '生成圖片')}
                   </button>
                 </div>
               </div>
