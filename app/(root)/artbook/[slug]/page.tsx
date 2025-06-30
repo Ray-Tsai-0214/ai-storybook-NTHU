@@ -9,6 +9,8 @@ import { Heart, Eye, MessageCircle, Calendar, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CommentSection } from "@/components/artbook/comments/comment-section";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface ArtbookDetails {
@@ -62,6 +64,7 @@ export default function ArtbookDetail({ params }: PageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(0);
   
   // Unwrap params using React.use()
   const { slug } = use(params);
@@ -83,6 +86,7 @@ export default function ArtbookDetail({ params }: PageProps) {
       const data = await response.json();
       setArtbook(data.artbook);
       setLikeCount(data.artbook.post?._count.likes || 0);
+      setCommentCount(data.artbook.post?._count.comments || 0);
       
       // Check if user liked this artbook
       if (user && data.artbook.post) {
@@ -210,7 +214,7 @@ export default function ArtbookDetail({ params }: PageProps) {
                   </div>
                   <div className="flex items-center gap-1">
                     <MessageCircle className="h-4 w-4" />
-                    <span>{artbook.post?._count.comments || 0}</span>
+                    <span>{commentCount}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
@@ -350,6 +354,16 @@ export default function ArtbookDetail({ params }: PageProps) {
             </div>
           </div>
         )}
+
+        {/* Comment Section */}
+        <div className="mt-12 md:mt-16">
+          <Separator className="mb-6 md:mb-8" />
+          <CommentSection 
+            artbookSlug={slug}
+            className="max-w-4xl mx-auto"
+            onCommentCountChange={setCommentCount}
+          />
+        </div>
       </div>
     </div>
   );
