@@ -23,7 +23,14 @@
       "Bash(npx:*)",
       "WebFetch(domain:www.better-auth.com)",
       "Bash(timeout 30 npx tsc --noEmit)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(ls:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(cat:*)",
+      "Bash(ssh:*)",
+      "Bash(source:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)"
     ],
     "deny": [
       "Bash(*dev*)",

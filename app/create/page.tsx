@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wand2, Plus, Minus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Wand2, Plus, Minus, ChevronLeft, ChevronRight, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/stores/auth-store";
 
@@ -36,6 +36,7 @@ export default function Create() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Artbook metadata with character consistency data
   const [artbookData, setArtbookData] = useState<ArtbookData>({
@@ -99,15 +100,15 @@ export default function Create() {
     setTotalPages(totalPages + 1);
   };
 
-  // Remove page
+  // Remove page (always remove the last page)
   const removePage = () => {
     if (totalPages > 1) {
       const newPagesData = [...pagesData];
-      newPagesData.splice(currentPage - 1, 1);
+      newPagesData.pop(); // Remove the last page
       setPagesData(newPagesData);
       setTotalPages(totalPages - 1);
       
-      // Adjust current page if needed
+      // Adjust current page if we're currently on the page that was removed
       if (currentPage > totalPages - 1) {
         setCurrentPage(totalPages - 1);
       }
@@ -231,6 +232,53 @@ export default function Create() {
       toast.error(error instanceof Error ? error.message : "生成圖片時發生錯誤，請稍後再試");
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("請選擇圖片檔案");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("圖片大小不能超過 5MB");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      // Convert file to base64 for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        updatePageData('imageUrl', imageUrl);
+        updatePageData('generatedImage', imageUrl);
+        
+        // If it's the first page, update cover photo
+        if (currentPage === 1) {
+          setArtbookData(prev => ({
+            ...prev,
+            coverPhoto: imageUrl
+          }));
+        }
+        
+        toast.success("圖片上傳成功！");
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("圖片上傳失敗，請稍後再試");
+    } finally {
+      setIsUploadingImage(false);
+      // Reset input
+      event.target.value = '';
     }
   };
 
@@ -509,7 +557,7 @@ export default function Create() {
                     onClick={removePage}
                     disabled={totalPages === 1}
                     className="p-2 bg-red-100 hover:bg-red-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="刪除當前頁面"
+                    title="刪除最後一頁"
                   >
                     <Minus className="w-5 h-5 text-red-600" />
                   </button>
@@ -656,12 +704,22 @@ export default function Create() {
                 
                 {/* Action Buttons */}
                 <div className="flex gap-2.5">
-                  <button 
-                    className="flex-1 h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors"
-                    style={{ fontFamily: 'Syne, sans-serif' }}
-                  >
-                    上傳圖片
-                  </button>
+                  <div className="flex-1 relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      disabled={isUploadingImage}
+                    />
+                    <button 
+                      disabled={isUploadingImage}
+                      className="w-full h-10 bg-white border-2 border-black rounded-[20px] text-base text-[#364153] hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ fontFamily: 'Syne, sans-serif' }}
+                    >
+                      {isUploadingImage ? '上傳中...' : '上傳圖片'}
+                    </button>
+                  </div>
                   <button 
                     onClick={() => generateImage(currentPage - 1)}
                     disabled={isGeneratingImage}
