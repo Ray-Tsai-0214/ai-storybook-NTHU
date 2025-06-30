@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     // Get session from Better Auth
@@ -21,11 +21,11 @@ export async function POST(
       );
     }
 
-    const { id } = await params;
+    const { slug } = await params;
 
-    // Find the artbook's post by ID
+    // Find the artbook's post by slug
     const artbook = await prisma.artbook.findUnique({
-      where: { id },
+      where: { slug },
       include: { post: true },
     });
 
@@ -84,14 +84,14 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { slug } = await params;
 
-    // Get the artbook's post with like count by ID
+    // Get the artbook's post with like count by slug
     const artbook = await prisma.artbook.findUnique({
-      where: { id },
+      where: { slug },
       include: {
         post: {
           include: {

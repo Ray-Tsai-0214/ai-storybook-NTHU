@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 interface ArtbookCardProps {
   id: string;
+  slug: string;
   title: string;
   description?: string;
   category: string;
@@ -27,7 +28,7 @@ interface ArtbookCardProps {
   createdAt: string;
   isLiked?: boolean;
   onLike?: (id: string) => void;
-  onClick?: (id: string) => void;
+  onClick?: (slug: string) => void;
 }
 
 const categoryColors = {
@@ -40,6 +41,7 @@ const categoryColors = {
 
 export function ArtbookCard({
   id,
+  slug,
   title,
   description,
   category,
@@ -63,7 +65,7 @@ export function ArtbookCard({
   };
 
   const handleClick = () => {
-    onClick?.(id);
+    onClick?.(slug);
   };
 
   const formatDate = (dateString: string) => {

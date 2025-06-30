@@ -121,8 +121,8 @@ export default function Discovery() {
     }
   };
 
-  const handleArtbookClick = (artbookId: string) => {
-    router.push(`/artbook/${artbookId}`);
+  const handleArtbookClick = (artbookSlug: string) => {
+    router.push(`/artbook/${artbookSlug}`);
   };
 
   const handleClearFilters = () => {
@@ -212,6 +212,7 @@ export default function Discovery() {
                 <ArtbookCard
                   key={artbook.id}
                   id={artbook.id}
+                  slug={artbook.slug}
                   title={artbook.title}
                   description={artbook.description}
                   category={artbook.category}

@@ -13,7 +13,7 @@ const createCommentSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     // Get session from Better Auth
@@ -30,11 +30,11 @@ export async function POST(
 
     const body = await request.json();
     const validatedData = createCommentSchema.parse(body);
-    const artbookId = params.id;
+    const { slug } = await params;
 
     // Find the artbook's post
     const artbook = await prisma.artbook.findUnique({
-      where: { id: artbookId },
+      where: { slug },
       include: { post: true },
     });
 
@@ -107,14 +107,14 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const artbookId = params.id;
+    const { slug } = await params;
 
     // Find the artbook's post
     const artbook = await prisma.artbook.findUnique({
-      where: { id: artbookId },
+      where: { slug },
       include: { post: true },
     });
 

@@ -114,22 +114,6 @@ export function Sidebar() {
           <SidebarNav isCollapsed={isCollapsed} />
         </div>
         
-        {/* Categories Dropdown */}
-        {!isCollapsed && (
-          <div className="px-8 py-4">
-            <div className="bg-white border-2 border-black rounded-[20px] p-4" 
-                 style={{ boxShadow: '10px 10px 0px #FF6900' }}>
-              <div className="flex items-center justify-between">
-                <span className="text-base font-normal text-[#1E2939]" style={{ fontFamily: 'Syne, sans-serif' }}>
-                  Categories
-                </span>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="transform rotate-180">
-                  <path d="M6 10.5L9 7.5L12 10.5" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </div>
-        )}
         
         {/* Auth buttons at bottom */}
         <div className={cn(
@@ -213,18 +197,6 @@ export function Sidebar() {
                 <SidebarNav onItemClick={() => setOpen(false)} />
               </div>
               
-              {/* Categories Dropdown */}
-              <div className="px-8 py-4">
-                <div className="bg-white border-2 border-black rounded-[20px] p-4" 
-                     style={{ boxShadow: '10px 10px 0px #FF6900' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-normal text-[#1E2939]" style={{ fontFamily: 'Syne, sans-serif' }}>Categories</span>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="transform rotate-180">
-                      <path d="M6 10.5L9 7.5L12 10.5" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
               
               {/* Auth buttons at bottom */}
               <div className="absolute bottom-0 left-0 right-0 p-8">

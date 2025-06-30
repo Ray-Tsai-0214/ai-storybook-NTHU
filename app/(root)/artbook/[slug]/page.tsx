@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface ArtbookDetails {
   id: string;
+  slug: string;
   title: string;
   description?: string;
   category: string;
@@ -41,7 +42,7 @@ interface ArtbookDetails {
 
 interface PageProps {
   params: Promise<{
-    id: string;
+    slug: string;
   }>;
 }
 
@@ -63,11 +64,11 @@ export default function ArtbookDetail({ params }: PageProps) {
   const [likeCount, setLikeCount] = useState(0);
   
   // Unwrap params using React.use()
-  const { id } = use(params);
+  const { slug } = use(params);
 
   const fetchArtbook = useCallback(async () => {
     try {
-      const response = await fetch(`/api/artbooks/${id}`);
+      const response = await fetch(`/api/artbooks/${slug}`);
       if (!response.ok) {
         if (response.status === 404) {
           toast.error("Artbook not found");
@@ -83,7 +84,7 @@ export default function ArtbookDetail({ params }: PageProps) {
       
       // Check if user liked this artbook
       if (user && data.artbook.post) {
-        const likeResponse = await fetch(`/api/artbooks/${id}/like`);
+        const likeResponse = await fetch(`/api/artbooks/${slug}/like`);
         if (likeResponse.ok) {
           const likeData = await likeResponse.json();
           setIsLiked(likeData.userLiked);
@@ -95,7 +96,7 @@ export default function ArtbookDetail({ params }: PageProps) {
     } finally {
       setLoading(false);
     }
-  }, [id, user, router]);
+  }, [slug, user, router]);
 
   useEffect(() => {
     fetchArtbook();
@@ -108,7 +109,7 @@ export default function ArtbookDetail({ params }: PageProps) {
     }
 
     try {
-      const response = await fetch(`/api/artbooks/${id}/like`, {
+      const response = await fetch(`/api/artbooks/${slug}/like`, {
         method: "POST",
       });
 

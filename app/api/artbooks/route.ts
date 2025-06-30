@@ -3,6 +3,16 @@ import { auth } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 
+// Function to generate a URL-friendly slug
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
 const prisma = new PrismaClient();
 
 // Input validation schema
@@ -39,6 +49,16 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createArtbookSchema.parse(body);
 
+    // Generate a unique slug
+    const baseSlug = generateSlug(validatedData.title);
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Ensure slug is unique
+    while (await prisma.artbook.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
 
     // Create artbook with pages in a transaction
     const artbook = await prisma.$transaction(async (tx) => {
@@ -46,6 +66,7 @@ export async function POST(request: NextRequest) {
       const newArtbook = await tx.artbook.create({
         data: {
           title: validatedData.title,
+          slug: slug,
           description: validatedData.description,
           coverPhoto: validatedData.coverPhoto,
           category: validatedData.category,

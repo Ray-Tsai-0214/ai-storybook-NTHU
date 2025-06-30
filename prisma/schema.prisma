@@ -89,6 +89,7 @@ model Verification {
 // Artbook models
 model Artbook {
   id          String    @id @default(cuid())
+  slug        String    @unique
   title       String
   description String?
   coverPhoto  String?   // base64 or URL

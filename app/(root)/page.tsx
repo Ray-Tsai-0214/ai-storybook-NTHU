@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface UserArtbook {
   id: string;
+  slug: string;
   title: string;
   description?: string;
   category: string;
@@ -248,7 +249,7 @@ export default function Home() {
 				) : (
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 						{userArtbooks.slice(0, 8).map((artbook) => (
-							<Link key={artbook.id} href={`/artbook/${artbook.id}`}>
+							<Link key={artbook.id} href={`/artbook/${artbook.slug}`}>
 								<Card className="bg-card border-border hover:border-primary/50 transition-all cursor-pointer group h-full">
 									<CardContent className="p-0">
 										<div className="relative aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-lg overflow-hidden">

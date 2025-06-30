@@ -28,6 +28,10 @@ git push origin master    # 推送到遠端
   /api            # API 路由
     /auth         # Better Auth 認證端點
     /artbooks     # 繪本 CRUD 操作
+      /[slug]     # 使用 slug 參數的繪本路由 (取代 UUID)
+        /like     # 按讚功能
+        /view     # 瀏覽量統計
+        /comments # 評論系統
     /user         # 用戶資料管理
     /generate-outline          # 故事大綱生成 (GPT-4)
     /generate-story           # 完整故事生成 (GPT-4)
@@ -35,15 +39,18 @@ git push origin master    # 推送到遠端
     /generate-consistent-image # 一致性圖片生成
     /generate-audio           # 音頻生成 (TTS)
     /extract-character-info    # 角色特徵提取
-  /artbook        # 繪本相關頁面
-  /create         # 創建繪本頁面
-  /discovery      # 探索頁面
-  /profile        # 個人檔案頁面
-  /login          # 登入頁面
-  /signup         # 註冊頁面
+  /auth           # 認證頁面 (整合到專用目錄)
+    /login        # 登入頁面 (無側邊欄)
+    /signup       # 註冊頁面 (無側邊欄)
+  /(root)         # 主應用頁面 (含側邊欄) - Route Group
+    /artbook      # 繪本相關頁面
+      /[slug]     # 使用 slug 的繪本詳情頁
+    /create       # 創建繪本頁面
+    /discovery    # 探索頁面
+    /profile      # 個人檔案頁面
+    /page.tsx     # 首頁
 /components       # React 元件
   /ui             # shadcn/ui 元件庫
-  /auth           # 認證相關組件
   /artbook        # 繪本創作組件
   /discovery      # 探索頁面組件
   /profile        # 個人資料組件
@@ -110,6 +117,8 @@ git push origin master    # 推送到遠端
 - [x] 新設計系統實施 (橘色主題)
 - [x] **社交功能 (按讚/評論)** ⭐ 完成
 - [x] **個人檔案頁面** ⭐ 完成
+- [x] **Route Groups 架構** ⭐ 完成
+- [x] **SEO 友善 URL (Slug 系統)** ⭐ 完成
 
 ### 🚧 進行中任務
 - [ ] AWS S3 媒體儲存整合
@@ -143,8 +152,6 @@ git push origin master    # 推送到遠端
 
 ```
 components/
-├── auth/
-│   └── user-nav.tsx              # 用戶導航組件 (✅ 完成)
 ├── profile/
 │   ├── profile-info-form.tsx     # 個人資料表單 (✅ 完成)
 │   └── password-change-form.tsx  # 密碼變更表單 (✅ 完成)
@@ -159,6 +166,11 @@ components/
 │   └── artbook-card.tsx          # 繪本卡片 (✅ 完成)
 └── ui/                          # Reusable UI components (shadcn/ui)
 ```
+
+#### 架構優化重點
+- **Route Groups**: 使用 `(root)` 組織主應用頁面，確保側邊欄僅在需要時顯示
+- **認證流程分離**: `/auth/*` 路由提供無干擾的登入/註冊體驗
+- **簡化側邊欄**: 移除冗餘的 UserNav 組件和類別下拉選單
 
 ## 🐛 已知問題
 - [x] ~~圖片生成帶有書本邊框問題~~ (已解決)
@@ -201,11 +213,18 @@ components/
 ### 資料庫 Schema (Prisma)
 主要實體：
 - **Users**: 用戶資料
-- **Artbooks**: 繪本資料 (標題、內容、可見性)
+- **Artbooks**: 繪本資料 (標題、slug、內容、可見性)
 - **Pages**: 繪本頁面 (故事文字、圖片URL、音頻URL)
 - **Likes**: 用戶按讚關係
 - **Comments**: 評論系統 (支援回覆)
 - **Views**: 瀏覽量追蹤
+
+### 新增功能重點
+#### SEO 友善 URL 系統 (Slug)
+- **自動 Slug 生成**: 從繪本標題自動產生 URL 友善的 slug
+- **唯一性保證**: 自動處理重複 slug，添加數字後綴
+- **URL 格式**: `/artbook/my-fairy-tale-story` (取代 UUID)
+- **向下相容**: 保留 ID 欄位用於內部關聯
 
 ## 📝 工作日誌
 ### 2025-06-26 (第一次工作階段)
@@ -238,8 +257,26 @@ components/
   - 整合社交功能 (按讚/評論)
   - 整合組件架構重構
 
+### 2025-06-30 (第三次工作階段)
+- ✅ **TypeScript 錯誤修復**
+  - 修復 'any' 類型錯誤
+  - 清理未使用的 imports 和變數
+  - 修復 useEffect 依賴警告
+  - 替換 img 標籤為 Next.js Image 組件
+- ✅ **專案架構重組**
+  - 實施 Route Groups 架構 `(root)` 和 `auth/`
+  - 分離認證頁面和主應用頁面
+  - 重組側邊欄佈局系統
+  - 移除冗餘的 UserNav 組件和類別選單
+- ✅ **SEO 友善 URL 系統 (Slug)**
+  - 新增 slug 欄位到資料庫 schema
+  - 實作自動 slug 生成邏輯
+  - 更新所有 API 路由使用 slug 參數
+  - 修改前端頁面和連結使用 slug
+  - 執行資料庫 migration
+
 ---
-**最後更新**: 2025-06-26 18:30
+**最後更新**: 2025-06-30 17:15
 **更新者**: Claude Code
 
 > 💡 **使用提示**: 每次開始新的工作階段時，請先查看此文件了解最新進度。完成重要更改後，請更新相關章節並提交。

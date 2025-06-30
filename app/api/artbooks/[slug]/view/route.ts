@@ -5,14 +5,14 @@ const prisma = new PrismaClient();
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const artbookId = params.id;
+    const { slug } = await params;
 
     // Find the artbook's post
     const artbook = await prisma.artbook.findUnique({
-      where: { id: artbookId },
+      where: { slug },
       include: { post: true },
     });
 

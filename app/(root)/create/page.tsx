@@ -427,7 +427,7 @@ export default function Create() {
 
       const data = await response.json();
       toast.success("Artbook saved successfully!");
-      router.push(`/artbook/${data.artbook.id}`);
+      router.push(`/artbook/${data.artbook.slug}`);
     } catch (error) {
       console.error('Error saving artbook:', error);
       toast.error(error instanceof Error ? error.message : "Failed to save artbook");
