@@ -109,7 +109,7 @@ export default function Home() {
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-semibold">Welcome to AI Artbook</h2>
           <p className="text-muted-foreground">Please sign in to view your dashboard and create amazing stories.</p>
-          <Link href="/login">
+          <Link href="/auth/login">
             <Button className="mt-4">
               Sign In
             </Button>

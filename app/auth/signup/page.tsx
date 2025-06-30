@@ -48,7 +48,7 @@ export default function SignUpPage() {
         setError(result.error.message || "Sign up failed");
       } else {
         // Show success message or redirect
-        router.push("/login?message=Account created successfully. Please sign in.");
+        router.push("/auth/login?message=Account created successfully. Please sign in.");
       }
     } catch (error: unknown) {
       setError((error as Error).message || "An error occurred during sign up");
@@ -175,7 +175,7 @@ export default function SignUpPage() {
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Already have an account? </span>
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link href="/auth/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </div>

@@ -3,7 +3,6 @@ import { Syne, Manrope, Comic_Neue } from "next/font/google";
 import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
-import { AppLayout } from "@/components/app-layout";
 import { AuthProvider } from "@/components/auth-provider-zustand";
 import { Toaster } from "sonner";
 
@@ -45,9 +44,7 @@ export default async function RootLayout({
 			>
 				<NextIntlClientProvider messages={messages}>
 					<AuthProvider>
-						<AppLayout>
-							{children}
-						</AppLayout>
+						{children}
 					</AuthProvider>
 					<Toaster 
 						position="top-center"

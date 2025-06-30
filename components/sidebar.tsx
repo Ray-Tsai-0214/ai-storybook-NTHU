@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/app-layout";
 import { useAuth } from "@/lib/stores/auth-store";
-import { UserNav } from "@/components/auth/user-nav";
 import Link from "next/link";
 
 export function Sidebar() {
@@ -148,34 +147,18 @@ export function Sidebar() {
               {isCollapsed ? "↩" : "Logout"}
             </Button>
           ) : !isLoading ? (
-            <div className={cn(
-              "flex",
-              isCollapsed ? "flex-col gap-2" : "gap-2"
-            )}>
-              <Link href="/login" className={isCollapsed ? "w-full" : "flex-1"}>
-                <Button 
-                  variant="outline" 
-                  className={cn(
-                    "w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white",
-                    isCollapsed && "px-2"
-                  )}
-                  style={{ fontFamily: 'Syne, sans-serif' }}
-                >
-                  {isCollapsed ? "←" : "Sign In"}
-                </Button>
-              </Link>
-              <Link href="/signup" className={isCollapsed ? "w-full" : "flex-1"}>
-                <Button 
-                  className={cn(
-                    "w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base",
-                    isCollapsed && "px-2"
-                  )}
-                  style={{ fontFamily: 'Syne, sans-serif' }}
-                >
-                  {isCollapsed ? "+" : "Sign Up"}
-                </Button>
-              </Link>
-            </div>
+            <Link href="/auth/login" className="w-full">
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white",
+                  isCollapsed && "px-2"
+                )}
+                style={{ fontFamily: 'Syne, sans-serif' }}
+              >
+                {isCollapsed ? "←" : "Sign In"}
+              </Button>
+            </Link>
           ) : null}
         </div>
       </aside>
@@ -257,27 +240,16 @@ export function Sidebar() {
                     Logout
                   </Button>
                 ) : !isLoading ? (
-                  <div className="flex flex-col gap-2">
-                    <Link href="/login">
-                      <Button 
-                        variant="outline" 
-                        className="w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white"
-                        style={{ fontFamily: 'Syne, sans-serif' }}
-                        onClick={() => setOpen(false)}
-                      >
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link href="/signup">
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl h-[52px] font-normal text-base"
-                        style={{ fontFamily: 'Syne, sans-serif' }}
-                        onClick={() => setOpen(false)}
-                      >
-                        Sign Up
-                      </Button>
-                    </Link>
-                  </div>
+                  <Link href="/auth/login">
+                    <Button 
+                      variant="outline" 
+                      className="w-full rounded-xl h-[52px] font-normal text-base border-2 border-primary text-primary hover:bg-primary hover:text-white"
+                      style={{ fontFamily: 'Syne, sans-serif' }}
+                      onClick={() => setOpen(false)}
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
                 ) : null}
               </div>
             </SheetContent>
@@ -286,8 +258,6 @@ export function Sidebar() {
           <div className="flex-1" />
           
           <LanguageSwitcher />
-          
-          <UserNav />
         </header>
       </div>
 
@@ -302,8 +272,6 @@ export function Sidebar() {
           <div className="flex-1" />
           
           <LanguageSwitcher />
-          
-          <UserNav />
         </header>
       </div>
     </>
