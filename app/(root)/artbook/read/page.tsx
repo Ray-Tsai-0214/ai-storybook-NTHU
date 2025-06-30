@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function ReadArtbook() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const slug = searchParams.get('slug');
   const [currentPage, setCurrentPage] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(105); // 1:45 in seconds
@@ -55,7 +57,11 @@ export default function ReadArtbook() {
   };
 
   const handleClose = () => {
-    router.push("/artbook");
+    if (slug) {
+      window.location.href = `/artbook/${slug}`;
+    } else {
+      window.location.href = "/discovery";
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -91,11 +97,13 @@ export default function ReadArtbook() {
       <div className="flex-1 flex">
         {/* Left Page - Image */}
         <div className="w-[824px] relative">
-          <img
+          <Image
             src={pages[currentPage - 1].image}
             alt={`Page ${currentPage}`}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
             style={{ filter: 'drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25))' }}
+            sizes="824px"
           />
           
           {/* Navigation Arrows */}
@@ -142,10 +150,12 @@ export default function ReadArtbook() {
           <div className="px-12 pb-12">
             <div className="bg-[#FCE7F3] border-2 border-[#1E2939] rounded-[20px] p-5 flex items-center gap-4">
               {/* Album Art */}
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=58&h=58&fit=crop"
                 alt="Music"
-                className="w-[58px] h-[58px] rounded"
+                width={58}
+                height={58}
+                className="rounded"
               />
               
               {/* Progress */}
@@ -189,18 +199,18 @@ export default function ReadArtbook() {
 
 // Ending Screen Component
 function EndingScreen({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
-  
   return (
     <div className="fixed inset-0 bg-[#F3F4F6] z-50 flex">
       {/* Music Card */}
       <div className="absolute left-[304px] top-[114px] w-[328px] h-[529px] bg-white/70 backdrop-blur rounded-3xl p-5">
         <div className="flex flex-col items-center gap-7">
           {/* Album Cover */}
-          <img
+          <Image
             src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=290&h=273&fit=crop"
             alt="Album Cover"
-            className="w-[290px] h-[273px] rounded-2xl"
+            width={290}
+            height={273}
+            className="rounded-2xl"
             style={{ filter: 'drop-shadow(0px 20px 60px rgba(20, 10, 4, 0.08))' }}
           />
           
@@ -271,10 +281,12 @@ function EndingScreen({ onClose }: { onClose: () => void }) {
         <div className="space-y-5 max-w-[701px]">
           {[1, 2, 3, 4].map((index) => (
             <div key={index} className="bg-white border-2 border-black rounded-[20px] p-5 flex items-start gap-7">
-              <img
+              <Image
                 src="/placeholder-avatar.jpg"
                 alt="Athur"
-                className="w-[100px] h-[100px] rounded-full"
+                width={100}
+                height={100}
+                className="rounded-full"
               />
               <div className="flex-1">
                 <h3 className="text-[40px] leading-[56px] text-[#1E2939]" style={{ fontFamily: 'Comic Neue, cursive' }}>

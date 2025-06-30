@@ -15,18 +15,14 @@ interface PageData {
 
 interface StoryOutlineSectionProps {
   currentPageData: PageData;
-  currentPage: number;
   totalPages: number;
   onUpdatePageData: (field: keyof PageData, value: string) => void;
-  onUpdateAllPages: (pagesData: PageData[]) => void;
 }
 
 export function StoryOutlineSection({ 
   currentPageData, 
-  currentPage, 
   totalPages, 
-  onUpdatePageData,
-  onUpdateAllPages 
+  onUpdatePageData
 }: StoryOutlineSectionProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 

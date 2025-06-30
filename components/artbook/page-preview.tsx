@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface PageData {
   outlinePrompt: string;
   storyOutline: string;
@@ -26,10 +28,12 @@ export function PagePreview({ currentPage, totalPages, currentPageData }: PagePr
         {/* Page Image */}
         <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center overflow-hidden">
           {currentPageData.imageUrl ? (
-            <img 
+            <Image 
               src={currentPageData.imageUrl} 
               alt={`Page ${currentPage}`}
-              className="w-full h-full object-cover rounded-[31px]"
+              fill
+              className="object-cover rounded-[31px]"
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           ) : (
             <div className="text-center">

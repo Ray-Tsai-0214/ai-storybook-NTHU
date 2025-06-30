@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, Eye, MessageCircle, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface ArtbookCardProps {
   id: string;
@@ -77,12 +78,14 @@ export function ArtbookCard({
       className="group cursor-pointer hover:shadow-lg transition-shadow duration-200"
       onClick={handleClick}
     >
-      <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-lg overflow-hidden">
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-lg overflow-hidden">
         {coverPhoto ? (
-          <img 
+          <Image 
             src={coverPhoto} 
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-200"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

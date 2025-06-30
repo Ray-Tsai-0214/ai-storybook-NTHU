@@ -91,9 +91,30 @@ async function seedFakeData() {
       const createdAt = getRandomDate(30); // Random date within last 30 days
       const fullTitle = `${title} ${i + 1}`;
       
+      // Generate a unique slug
+      function generateSlug(title: string): string {
+        return title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+          .replace(/\s+/g, '-') // Replace spaces with hyphens
+          .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+          .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+      }
+
+      const baseSlug = generateSlug(fullTitle);
+      let slug = baseSlug;
+      let counter = 1;
+
+      // Ensure slug is unique
+      while (await prisma.artbook.findUnique({ where: { slug } })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
       const artbook = await prisma.artbook.create({
         data: {
           title: fullTitle,
+          slug,
           description,
           category,
           isPublic: true,

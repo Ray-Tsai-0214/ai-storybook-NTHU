@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/stores/auth-store";
 import { toast } from "sonner";
-import { Heart, Eye, MessageCircle, Calendar, ArrowLeft } from "lucide-react";
+import { Heart, Eye, MessageCircle, Calendar, ArrowLeft, Flag, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentSection } from "@/components/artbook/comments/comment-section";
+import { ReadingDialog } from "@/components/artbook/reading-dialog";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,6 @@ export default function ArtbookDetail({ params }: PageProps) {
   const { user } = useAuth();
   const [artbook, setArtbook] = useState<ArtbookDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
@@ -132,6 +132,20 @@ export default function ArtbookDetail({ params }: PageProps) {
     }
   };
 
+  const handleReadNow = () => {
+    router.push(`/artbook/read?slug=${slug}`);
+  };
+
+  const handleReport = async () => {
+    if (!user) {
+      toast.error("Please sign in to report content");
+      return;
+    }
+    
+    // TODO: Implement report functionality
+    toast.success("Report submitted. Thank you for helping keep our community safe.");
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -164,7 +178,8 @@ export default function ArtbookDetail({ params }: PageProps) {
     );
   }
 
-  const currentPageData = artbook.pages.find(p => p.pageNumber === currentPage) || artbook.pages[0];
+  // Get cover image - use first page's image or fallback
+  const coverImage = artbook.coverPhoto || artbook.pages[0]?.picture;
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,18 +197,41 @@ export default function ArtbookDetail({ params }: PageProps) {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between mb-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold mb-2">{artbook.title}</h1>
               {artbook.description && (
-                <p className="text-muted-foreground text-lg">{artbook.description}</p>
+                <p className="text-muted-foreground text-lg mb-4">{artbook.description}</p>
               )}
+              
+              {/* Read Now Button */}
+              <Button 
+                onClick={handleReadNow}
+                className="bg-primary hover:bg-primary/90 text-white px-6 py-3 text-lg font-semibold"
+                size="lg"
+              >
+                <BookOpen className="mr-2 h-5 w-5" />
+                Read Now
+              </Button>
             </div>
-            <Badge 
-              variant="secondary" 
-              className={cn("capitalize", categoryColors[artbook.category.toLowerCase() as keyof typeof categoryColors])}
-            >
-              {artbook.category}
-            </Badge>
+            
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant="secondary" 
+                className={cn("capitalize", categoryColors[artbook.category.toLowerCase() as keyof typeof categoryColors])}
+              >
+                {artbook.category}
+              </Badge>
+              
+              {/* Report Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReport}
+                className="text-muted-foreground hover:text-red-500"
+              >
+                <Flag className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Author and Stats */}
@@ -242,118 +280,55 @@ export default function ArtbookDetail({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Page Image */}
-          <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
-            {currentPageData?.picture ? (
-              <Image 
-                src={currentPageData.picture} 
-                alt={`Page ${currentPage}`}
-                width={800}
-                height={600}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-32 bg-gray-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                    <div className="w-16 h-20 bg-white rounded" />
+        {/* Cover Image */}
+        <div className="mb-12">
+          <div className="max-w-md mx-auto">
+            <div className="aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden shadow-lg">
+              {coverImage ? (
+                <Image 
+                  src={coverImage} 
+                  alt={artbook.title}
+                  width={400}
+                  height={533}
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-24 h-32 bg-gray-400 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                      <div className="w-16 h-20 bg-white rounded" />
+                    </div>
+                    <p className="text-gray-500">No cover image</p>
                   </div>
-                  <p className="text-gray-500">No image for this page</p>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Page Content */}
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold mb-4">
-                Page {currentPage} of {artbook.pages.length}
-              </h3>
-              <div className="prose prose-lg">
-                <p className="text-gray-700 leading-relaxed">
-                  {currentPageData?.content || "No content available for this page."}
-                </p>
-              </div>
+              )}
             </div>
-
-            {/* Audio Player */}
-            {currentPageData?.audio && (
-              <div>
-                <h4 className="font-medium mb-2">Audio</h4>
-                <audio controls className="w-full">
-                  <source src={currentPageData.audio} type="audio/mp3" />
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            )}
-
-            {/* Page Navigation */}
-            <div className="flex items-center justify-between pt-4">
-              <Button
-                variant="outline"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            
+            {/* Read Book Button */}
+            <div className="mt-6 text-center">
+              <ReadingDialog
+                artbook={{
+                  id: artbook.id,
+                  title: artbook.title,
+                  pages: artbook.pages
+                }}
+                initialPage={1}
+                onPageChange={(pageNumber: number) => {
+                  console.log(`Reading page ${pageNumber}`);
+                }}
               >
-                Previous Page
-              </Button>
-              
-              <span className="text-sm text-muted-foreground">
-                {currentPage} / {artbook.pages.length}
-              </span>
-              
-              <Button
-                variant="outline"
-                disabled={currentPage === artbook.pages.length}
-                onClick={() => setCurrentPage(prev => Math.min(artbook.pages.length, prev + 1))}
-              >
-                Next Page
-              </Button>
+                <Button 
+                  size="lg" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Read Book
+                </Button>
+              </ReadingDialog>
             </div>
           </div>
         </div>
-
-        {/* Page Thumbnails */}
-        {artbook.pages.length > 1 && (
-          <div className="mt-12">
-            <h3 className="text-lg font-semibold mb-4">All Pages</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {artbook.pages.map((page) => (
-                <button
-                  key={page.id}
-                  onClick={() => setCurrentPage(page.pageNumber)}
-                  className={cn(
-                    "aspect-[3/4] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden border-2 transition-colors",
-                    currentPage === page.pageNumber 
-                      ? "border-primary" 
-                      : "border-transparent hover:border-gray-300"
-                  )}
-                >
-                  {page.picture ? (
-                    <Image 
-                      src={page.picture} 
-                      alt={`Page ${page.pageNumber}`}
-                      width={200}
-                      height={150}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-8 h-10 bg-gray-400 rounded mx-auto mb-1">
-                          <div className="w-6 h-8 bg-white rounded mx-auto pt-1" />
-                        </div>
-                        <p className="text-xs text-gray-500">{page.pageNumber}</p>
-                      </div>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Comment Section */}
         <div className="mt-12 md:mt-16">

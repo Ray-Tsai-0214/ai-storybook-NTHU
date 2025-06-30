@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wand2, Plus, Minus, ChevronLeft, ChevronRight, Loader2, Upload } from "lucide-react";
+import { Wand2, Plus, Minus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/stores/auth-store";
 
@@ -160,7 +161,12 @@ export default function Create() {
     try {
       const isFirstImage = pageIndex === 0;
       let apiEndpoint = '/api/generate-image';
-      let requestBody: any = {
+      let requestBody: {
+        prompt: string;
+        style: string;
+        characterInfo?: string;
+        pageNumber?: number;
+      } = {
         prompt,
         style: "colorful cartoon style"
       };
@@ -583,10 +589,12 @@ export default function Create() {
                 <div className="w-full h-[538px] bg-gradient-to-br from-blue-100 to-blue-200 rounded-[31px] flex items-center justify-center overflow-hidden">
                   {(currentPageData.generatedImage || currentPageData.imageUrl) ? (
                     <div className="relative w-full h-full">
-                      <img 
+                      <Image 
                         src={currentPageData.generatedImage || currentPageData.imageUrl} 
                         alt={`第${currentPage}頁圖片`}
-                        className="w-full h-full object-cover rounded-[31px]"
+                        fill
+                        className="object-cover rounded-[31px]"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                       />
                       {/* Regenerate button overlay */}
                       <button

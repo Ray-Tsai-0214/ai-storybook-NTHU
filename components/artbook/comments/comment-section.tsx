@@ -26,7 +26,9 @@ export interface Comment {
   replies?: Comment[];
   _count: {
     replies: number;
+    likes: number;
   };
+  userLiked?: boolean;
 }
 
 interface CommentSectionProps {
@@ -103,7 +105,10 @@ export function CommentSection({ artbookSlug, className, onCommentCountChange }:
               ? {
                   ...comment,
                   replies: [...(comment.replies || []), newComment],
-                  _count: { replies: comment._count.replies + 1 }
+                  _count: { 
+                    replies: comment._count.replies + 1,
+                    likes: comment._count.likes
+                  }
                 }
               : comment
           )
@@ -155,6 +160,85 @@ export function CommentSection({ artbookSlug, className, onCommentCountChange }:
     } catch (error) {
       console.error('Error updating comment:', error);
       toast.error('Failed to update comment');
+    }
+  };
+
+  // Like/Unlike comment with optimistic updates
+  const handleLikeComment = async (commentId: string) => {
+    if (!isAuthenticated || !user) {
+      toast.error('Please sign in to like comments');
+      return;
+    }
+
+    // Find the comment to toggle like state
+    const updateCommentLike = (comments: Comment[], targetId: string, isLiked: boolean): Comment[] => {
+      return comments.map(comment => {
+        if (comment.id === targetId) {
+          return {
+            ...comment,
+            userLiked: isLiked,
+            _count: {
+              ...comment._count,
+              likes: isLiked ? comment._count.likes + 1 : comment._count.likes - 1,
+            },
+          };
+        }
+        
+        // Check in replies
+        if (comment.replies && comment.replies.length > 0) {
+          return {
+            ...comment,
+            replies: updateCommentLike(comment.replies, targetId, isLiked),
+          };
+        }
+        
+        return comment;
+      });
+    };
+
+    // Find current like state
+    const findComment = (comments: Comment[], targetId: string): Comment | null => {
+      for (const comment of comments) {
+        if (comment.id === targetId) return comment;
+        if (comment.replies) {
+          const found = findComment(comment.replies, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const currentComment = findComment(comments, commentId);
+    if (!currentComment) return;
+
+    const isCurrentlyLiked = currentComment.userLiked ?? false;
+    const newLikedState = !isCurrentlyLiked;
+
+    // Optimistic update
+    setComments(prevComments => updateCommentLike(prevComments, commentId, newLikedState));
+
+    try {
+      const response = await fetch(`/api/artbooks/${artbookSlug}/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle like');
+      }
+
+      const data = await response.json();
+      
+      // Update with actual server response
+      setComments(prevComments => updateCommentLike(prevComments, commentId, data.liked));
+      
+    } catch (error) {
+      console.error('Error toggling comment like:', error);
+      // Rollback optimistic update
+      setComments(prevComments => updateCommentLike(prevComments, commentId, isCurrentlyLiked));
+      toast.error('Failed to update like status');
     }
   };
 
@@ -224,6 +308,7 @@ export function CommentSection({ artbookSlug, className, onCommentCountChange }:
               onReply={handleSubmitComment}
               onEdit={handleEditComment}
               onDelete={handleDeleteComment}
+              onLike={handleLikeComment}
               isSubmitting={isSubmitting}
             />
           )}

@@ -20,6 +20,25 @@ enum Category {
   FIGURE
 }
 
+// Report categories enum
+enum ReportCategory {
+  INAPPROPRIATE_CONTENT
+  COPYRIGHT_VIOLATION
+  SPAM_MISLEADING
+  HARASSMENT_BULLYING
+  VIOLENCE_GORE
+  ADULT_CONTENT
+  OTHER
+}
+
+// Report status enum
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
 // Better Auth required tables
 model User {
   id            String    @id @default(cuid())
@@ -36,6 +55,8 @@ model User {
   artbooks Artbook[]
   likes    Like[]
   comments Comment[]
+  commentLikes CommentLike[]
+  reports  Report[]
 
   @@map("users")
 }
@@ -105,6 +126,7 @@ model Artbook {
   // Related models
   pages       Page[]
   post        Post?
+  reports     Report[]
   
   @@map("artbooks")
 }
@@ -178,5 +200,49 @@ model Comment {
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
   
+  // Comment likes
+  likes     CommentLike[]
+  
   @@map("comments")
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  // User relationship
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Comment relationship
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, commentId])
+  @@map("comment_likes")
+}
+
+model Report {
+  id          String         @id @default(cuid())
+  category    ReportCategory
+  description String
+  status      ReportStatus   @default(PENDING)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  // Reporter relationship
+  reporterId  String
+  reporter    User           @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  
+  // Artbook being reported
+  artbookId   String
+  artbook     Artbook        @relation(fields: [artbookId], references: [id], onDelete: Cascade)
+  
+  // Moderation fields (optional)
+  moderatorId String?        // Admin who handled the report
+  resolution  String?        // Resolution notes
+  resolvedAt  DateTime?      // When the report was resolved
+  
+  @@unique([reporterId, artbookId]) // Prevent duplicate reports from same user
+  @@map("reports")
 }

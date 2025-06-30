@@ -1,15 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Eye, Heart, BookOpen, Plus, Calendar } from "lucide-react";
+import { TrendingUp, Eye, Heart, BookOpen, Plus } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/lib/stores/auth-store";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { ArtbookManagementCard } from "@/components/artbook/artbook-management-card";
 
 interface UserArtbook {
   id: string;
@@ -18,6 +17,7 @@ interface UserArtbook {
   description?: string;
   category: string;
   coverPhoto?: string;
+  isPublic: boolean;
   createdAt: string;
   post?: {
     views: number;
@@ -38,13 +38,6 @@ interface UserStats {
   totalComments: number;
 }
 
-const categoryColors = {
-  adventure: "bg-green-100 text-green-800",
-  horror: "bg-red-100 text-red-800", 
-  action: "bg-orange-100 text-orange-800",
-  romantic: "bg-pink-100 text-pink-800",
-  figure: "bg-blue-100 text-blue-800",
-};
 
 export default function Home() {
   const { user } = useAuth();
@@ -57,15 +50,7 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserData();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       // Fetch user's artbooks
       const response = await fetch(`/api/artbooks?authorId=${user?.id}`);
@@ -90,19 +75,33 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    } else {
+      setLoading(false);
+    }
+  }, [user, fetchUserData]);
+
+  const handleArtbookUpdate = (updatedArtbook: Partial<UserArtbook> & { id: string }) => {
+    setUserArtbooks(prev => prev.map(artbook => 
+      artbook.id === updatedArtbook.id ? { ...artbook, ...updatedArtbook } : artbook
+    ));
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const handleArtbookDelete = (deletedArtbookId: string) => {
+    setUserArtbooks(prev => prev.filter(artbook => artbook.id !== deletedArtbookId));
     
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
+    // Update stats
+    setUserStats(prev => ({
+      ...prev,
+      totalArtbooks: prev.totalArtbooks - 1,
+    }));
   };
+
+  // Removed unused formatDate function
 
   if (!user) {
     return (
@@ -249,59 +248,12 @@ export default function Home() {
 				) : (
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
 						{userArtbooks.slice(0, 8).map((artbook) => (
-							<Link key={artbook.id} href={`/artbook/${artbook.slug}`}>
-								<Card className="bg-card border-border hover:border-primary/50 transition-all cursor-pointer group h-full">
-									<CardContent className="p-0">
-										<div className="relative aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200 rounded-t-lg overflow-hidden">
-											{artbook.coverPhoto ? (
-												<img 
-													src={artbook.coverPhoto} 
-													alt={artbook.title}
-													className="w-full h-full object-cover"
-												/>
-											) : (
-												<div className="w-full h-full flex items-center justify-center">
-													<div className="text-center">
-														<BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-														<p className="text-sm text-gray-500">No cover</p>
-													</div>
-												</div>
-											)}
-											<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-											<div className="absolute top-2 right-2">
-												<Badge 
-													variant="secondary" 
-													className={cn("capitalize", categoryColors[artbook.category.toLowerCase() as keyof typeof categoryColors])}
-												>
-													{artbook.category}
-												</Badge>
-											</div>
-										</div>
-										<div className="p-4">
-											<h3 className="font-semibold line-clamp-1 mb-1">{artbook.title}</h3>
-											{artbook.description && (
-												<p className="text-sm text-muted-foreground line-clamp-2 mb-3">{artbook.description}</p>
-											)}
-											<div className="flex items-center justify-between text-sm text-muted-foreground">
-												<div className="flex items-center gap-3">
-													<span className="flex items-center gap-1">
-														<Eye className="h-3.5 w-3.5" />
-														{artbook.post?.views || 0}
-													</span>
-													<span className="flex items-center gap-1">
-														<Heart className="h-3.5 w-3.5" />
-														{artbook.post?._count.likes || 0}
-													</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<Calendar className="h-3.5 w-3.5" />
-													<span>{formatDate(artbook.createdAt)}</span>
-												</div>
-											</div>
-										</div>
-									</CardContent>
-								</Card>
-							</Link>
+							<ArtbookManagementCard
+								key={artbook.id}
+								artbook={artbook}
+								onUpdate={handleArtbookUpdate}
+								onDelete={handleArtbookDelete}
+							/>
 						))}
 					</div>
 				)}

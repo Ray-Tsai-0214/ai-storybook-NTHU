@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Home, Compass, BookOpen, User } from "lucide-react";
+import { Home, BookOpen } from "lucide-react";
 
 const navigationItems = [
   {
