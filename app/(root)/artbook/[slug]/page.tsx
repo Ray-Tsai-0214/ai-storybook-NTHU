@@ -67,6 +67,8 @@ export default function ArtbookDetail({ params }: PageProps) {
   const { slug } = use(params);
 
   const fetchArtbook = useCallback(async () => {
+    if (!slug) return;
+    
     try {
       const response = await fetch(`/api/artbooks/${slug}`);
       if (!response.ok) {
