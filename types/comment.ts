@@ -1,11 +1,87 @@
-import type { Comment, User } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 // Use Prisma's generated types directly
-export type { Comment, User } from '@prisma/client';
+export type { Comment, User, CommentLike } from '@prisma/client';
 
-// Only define transformed response types for API
-export interface CommentResponse extends Omit<Comment, 'likes'> {
-  user: Pick<User, 'id' | 'name' | 'image'>;
+// Define Prisma query result types using GetPayload
+export type CommentWithUser = Prisma.CommentGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        image: true;
+      };
+    };
+    _count: {
+      select: {
+        replies: true;
+        likes: true;
+      };
+    };
+  };
+}>;
+
+export type CommentWithReplies = Prisma.CommentGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        image: true;
+      };
+    };
+    replies: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            name: true;
+            image: true;
+          };
+        };
+        _count: {
+          select: {
+            likes: true;
+          };
+        };
+        likes: {
+          select: {
+            id: true;
+          };
+        };
+      };
+    };
+    _count: {
+      select: {
+        replies: true;
+        likes: true;
+      };
+    };
+    likes: {
+      select: {
+        id: true;
+      };
+    };
+  };
+}>;
+
+export type CommentReply = CommentWithReplies['replies'][number];
+
+// API response types
+export interface CommentResponse {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  postId: string;
+  parentId: string | null;
+  user: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
   likeCount: number;
   userLiked: boolean;
   _count: {
@@ -31,4 +107,14 @@ export interface CommentsPaginationResponse {
     hasNext: boolean;
     hasPrev: boolean;
   };
+}
+
+// Request types
+export interface CreateCommentRequest {
+  content: string;
+  parentId?: string;
+}
+
+export interface UpdateCommentRequest {
+  content: string;
 }

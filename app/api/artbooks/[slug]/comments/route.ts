@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import type { 
+  CommentWithReplies, 
+  CommentReply, 
+  CreateCommentRequest,
+  CommentsPaginationResponse 
+} from "@/types/comment";
 
 // Constants for comment system
 const MAX_COMMENT_LENGTH = 1000;
@@ -11,7 +17,7 @@ const MAX_NESTING_DEPTH = 2;
 const createCommentSchema = z.object({
   content: z.string().min(1, "Comment content is required").max(MAX_COMMENT_LENGTH, `Comment must be less than ${MAX_COMMENT_LENGTH} characters`),
   parentId: z.string().optional(),
-});
+}) satisfies z.ZodType<CreateCommentRequest>;
 
 // Helper function to sanitize HTML content
 function sanitizeContent(content: string): string {
@@ -258,8 +264,8 @@ export async function GET(
       take: limit,
     });
 
-    // Transform comments with proper typing - Prisma infers the types
-    const transformedComments = comments.map(comment => ({
+    // Transform comments with proper typing using defined types
+    const transformedComments = comments.map((comment: CommentWithReplies) => ({
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
@@ -274,7 +280,7 @@ export async function GET(
         replies: comment._count.replies,
         likes: comment._count.likes,
       },
-      replies: comment.replies.map(reply => ({
+      replies: comment.replies.map((reply: CommentReply) => ({
         id: reply.id,
         content: reply.content,
         createdAt: reply.createdAt,
@@ -295,7 +301,7 @@ export async function GET(
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
 
-    return NextResponse.json({
+    const response: CommentsPaginationResponse = {
       comments: transformedComments,
       pagination: {
         page,
@@ -305,7 +311,9 @@ export async function GET(
         hasNext,
         hasPrev,
       },
-    });
+    };
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error("Get comments error:", error);
