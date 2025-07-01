@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "system",
-            content: `你是一個專業的繪本插畫提示詞專家。請將用戶的場景描述與已建立的角色特徵結合，生成一個完整的圖片生成提示詞。
+            content: `你是一個專業的繪本插畫提示詞專家。請將用戶的場景描述與角色核心特徵輕度結合，保持創作靈活性。
 
             要求：
-            1. 保持角色的視覺一致性
-            2. 融合用戶的新場景描述
-            3. 維持兒童繪本風格
-            4. 提示詞要具體且富有描述性
-            5. 只回傳最終的提示詞，不要解釋`
+            1. 優先呈現用戶的新場景描述
+            2. 只在需要時輕度提及角色特徵（如角色種類、主色調）
+            3. 避免重複第一頁的具體細節
+            4. 保持每頁圖片的獨特性和變化性
+            5. 只回傳整合後的提示詞，不要前綴解釋`
           },
           {
             role: "user",
@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
       enhancedPrompt = promptEnhancement.choices[0].message.content || prompt;
     }
 
-    // Final prompt with style
-    const finalPrompt = `${enhancedPrompt}, ${style}, colorful, friendly, safe for children, whimsical, clean flat illustration, digital art, no borders, no frames, high quality, consistent character design, detailed artwork`;
+    // Final prompt with minimal style constraints
+    const finalPrompt = `${enhancedPrompt}, colorful cartoon style, clean flat illustration, digital art, no borders, no frames, high quality`;
 
     // Generate image using DALL-E 3
     const response = await openai.images.generate({

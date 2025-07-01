@@ -125,6 +125,10 @@ git push origin master    # Push to remote
 - [x] **Immersive Reading Dialog** ⭐ Complete
 - [x] **Artbook Report Functionality** ⭐ Complete
 - [x] **Accessibility Improvements** ⭐ Complete
+- [x] **Image Upload Functionality** ⭐ Complete
+- [x] **Page Deletion Logic Optimization** ⭐ Complete
+- [x] **Next.js Image Host Configuration** ⭐ Complete
+- [x] **Image Consistency System Optimization** ⭐ Complete
 
 ### 🚧 In Progress
 - [ ] AWS S3 media storage integration
@@ -138,17 +142,20 @@ git push origin master    # Push to remote
 - [ ] Mobile device optimization
 
 ## 🔥 Core Feature Details
-### Image Consistency System
-1. **Smart Character Memory**: Automatically extracts character features after generating the first page image
-2. **Continuity Generation**: Subsequent pages automatically merge character features with new scenes
-3. **Visual Consistency**: Ensures main characters maintain the same appearance across all pages
-4. **User Experience**: Orange notification boxes display recorded character features
+### Image Consistency System (Optimized)
+1. **Streamlined Character Memory**: Extracts core features (species, primary colors, basic clothing) to avoid over-constraining
+2. **Flexible Continuity**: Light integration of character features, prioritizing scene description creativity
+3. **Visual Consistency**: Maintains character recognizability while allowing scene variations
+4. **User Experience**: Orange notification boxes display streamlined character features
+5. **Creative Freedom**: Users can focus on scene descriptions while system handles consistency intelligently
 
 ### Create Artbook Page Features
 - **Dual-Column Layout**: Left preview area + right editing area
-- **Multi-Page Navigation**: Page switching, add/delete pages
+- **Multi-Page Navigation**: Page switching, add/delete pages (smart deletion from last page)
 - **Real-Time Preview**: Generated images displayed instantly
 - **Regeneration**: One-click regenerate button in top-right of images
+- **Image Upload**: Support for local image upload (5MB limit, instant preview, Base64 encoding)
+- **Image Consistency**: Optimized character feature system maintaining creative flexibility
 - **Smart Prompts**: Different pages provide relevant input guidance
 - **User Authentication Integration**: Login required to create
 - **Database Storage**: Complete artbook data persistence
@@ -274,6 +281,29 @@ Main Entities:
   - Fixed Prisma enum compatibility issues
   - Maintained existing type structure
 
+### 2025-07-01 (Image Upload & Consistency Optimization Session)
+- ✅ **Team Collaboration and Project Sync**
+  - Set up SSH key connection to GitHub
+  - Synced with team's 5 new commits (Route Groups, SEO Slug, Comment System, Reading Dialog)
+  - Learned Git team collaboration best practices
+- ✅ **Image Upload Functionality Implementation**
+  - Added local image upload processing (Base64 encoding)
+  - File validation (image type + 5MB size limit)
+  - Instant preview functionality and error handling
+  - Auto-update cover photo (page 1)
+- ✅ **Page Management Logic Optimization**
+  - Fixed page deletion logic: changed from "delete current page" to "delete last page"
+  - Updated button tooltips and user experience
+- ✅ **Next.js Image Host Configuration**
+  - Added OpenAI DALL-E image server to next.config.ts
+  - Used remotePatterns to replace deprecated domains setting
+  - Resolved image display hostname errors
+- ✅ **Image Consistency System Optimization**
+  - Streamlined character feature extraction logic to avoid over-constraining subsequent creations
+  - Optimized consistent image generation to maintain scene description flexibility
+  - Reduced style constraint vocabulary, enhanced creative freedom
+  - Provided multiple consistency control method suggestions
+
 ### 2025-06-30 (Previous Sessions)
 - ✅ **Comment System Complete Implementation**
   - Built complete comment API endpoints (GET, POST, PUT, DELETE)
@@ -298,7 +328,7 @@ Main Entities:
   - Left-right column reading interface: left image, right content and audio player
 
 ---
-**Last Updated**: 2025-07-01 12:00
+**Last Updated**: 2025-07-01 12:30
 **Updated By**: Claude Code
 
 > 💡 **Usage Note**: Check this file at the beginning of each work session to understand the latest progress. Update relevant sections after making important changes and commit.

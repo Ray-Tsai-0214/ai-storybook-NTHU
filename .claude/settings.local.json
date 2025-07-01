@@ -30,7 +30,8 @@
       "Bash(ssh:*)",
       "Bash(source:*)",
       "Bash(npm run dev:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [
       "Bash(*dev*)",
