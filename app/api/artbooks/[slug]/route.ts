@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 
-const prisma = new PrismaClient();
 
 // Input validation schema for updating artbook
 const updateArtbookSchema = z.object({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 // Function to generate a URL-friendly slug
@@ -13,7 +13,6 @@ function generateSlug(title: string): string {
     .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 }
 
-const prisma = new PrismaClient();
 
 // Input validation schema
 const createArtbookSchema = z.object({

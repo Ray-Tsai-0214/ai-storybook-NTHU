@@ -1,6 +1,4 @@
-import { PrismaClient, Category } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma, Category } from "@/lib/prisma";
 
 const categories: Category[] = ["ADVENTURE", "HORROR", "ACTION", "ROMANTIC", "FIGURE"];
 
@@ -158,7 +156,7 @@ async function seedFakeData() {
               createdAt: getRandomDate(7), // Likes within last 7 days
             },
           });
-        } catch (error) {
+        } catch {
           // Skip if like already exists (duplicate key)
           continue;
         }

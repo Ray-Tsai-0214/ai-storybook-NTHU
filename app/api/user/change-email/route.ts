@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import crypto from "crypto";
 
-const prisma = new PrismaClient();
 
 // Input validation schema
 const changeEmailSchema = z.object({

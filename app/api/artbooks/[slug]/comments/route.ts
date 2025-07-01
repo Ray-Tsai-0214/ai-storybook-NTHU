@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-
-const prisma = new PrismaClient();
 
 // Constants for comment system
 const MAX_COMMENT_LENGTH = 1000;
@@ -26,21 +24,23 @@ function sanitizeContent(content: string): string {
     .trim();
 }
 
-// Helper function to check comment nesting depth
-async function getCommentDepth(commentId: string): Promise<number> {
-  let depth = 0;
-  let currentId = commentId;
+// Helper function to calculate comment depth
+async function getCommentDepth(parentId: string): Promise<number> {
+  let depth = 1;
+  let currentParentId = parentId;
   
-  while (currentId && depth < MAX_NESTING_DEPTH + 1) {
-    const comment = await prisma.comment.findUnique({
-      where: { id: currentId },
+  while (currentParentId && depth < MAX_NESTING_DEPTH) {
+    const parentComment = await prisma.comment.findUnique({
+      where: { id: currentParentId },
       select: { parentId: true },
     });
     
-    if (!comment?.parentId) break;
+    if (!parentComment || !parentComment.parentId) {
+      break;
+    }
     
-    currentId = comment.parentId;
     depth++;
+    currentParentId = parentComment.parentId;
   }
   
   return depth;
@@ -52,13 +52,13 @@ export async function POST(
 ) {
   try {
     // Get session from Better Auth
-    const session = await auth.api.getSession({ 
-      headers: request.headers 
+    const session = await auth.api.getSession({
+      headers: request.headers,
     });
 
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized" },
+        { error: "Authentication required to post comments" },
         { status: 401 }
       );
     }
@@ -70,7 +70,7 @@ export async function POST(
     // Sanitize the content
     const sanitizedContent = sanitizeContent(validatedData.content);
 
-    // Find the artbook's post
+    // Find the artbook and its associated post
     const artbook = await prisma.artbook.findUnique({
       where: { slug },
       include: { post: true },
@@ -78,29 +78,37 @@ export async function POST(
 
     if (!artbook || !artbook.post) {
       return NextResponse.json(
-        { error: "Artbook or post not found" },
+        { error: "Artbook or associated post not found" },
         { status: 404 }
       );
     }
 
-    // If parentId is provided, verify the parent comment exists and check nesting depth
+    // If replying to a comment, validate parent comment and check depth
     if (validatedData.parentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: validatedData.parentId },
+        select: { id: true, postId: true, parentId: true },
       });
 
-      if (!parentComment || parentComment.postId !== artbook.post.id) {
+      if (!parentComment) {
         return NextResponse.json(
           { error: "Parent comment not found" },
           { status: 404 }
         );
       }
 
-      // Check nesting depth to prevent excessive nesting
-      const currentDepth = await getCommentDepth(validatedData.parentId);
-      if (currentDepth >= MAX_NESTING_DEPTH) {
+      if (parentComment.postId !== artbook.post.id) {
         return NextResponse.json(
-          { error: `Maximum nesting depth of ${MAX_NESTING_DEPTH} levels exceeded` },
+          { error: "Parent comment does not belong to this artbook" },
+          { status: 400 }
+        );
+      }
+
+      // Check nesting depth
+      const depth = await getCommentDepth(validatedData.parentId);
+      if (depth >= MAX_NESTING_DEPTH) {
+        return NextResponse.json(
+          { error: `Maximum comment nesting depth (${MAX_NESTING_DEPTH}) exceeded` },
           { status: 400 }
         );
       }
@@ -112,7 +120,7 @@ export async function POST(
         content: sanitizedContent,
         userId: session.user.id,
         postId: artbook.post.id,
-        parentId: validatedData.parentId,
+        parentId: validatedData.parentId || null,
       },
       include: {
         user: {
@@ -173,7 +181,12 @@ export async function GET(
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10')));
     const skip = (page - 1) * limit;
 
-    // Find the artbook's post
+    // Get session for like status
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    // Find the artbook and its associated post
     const artbook = await prisma.artbook.findUnique({
       where: { slug },
       include: { post: true },
@@ -181,17 +194,12 @@ export async function GET(
 
     if (!artbook || !artbook.post) {
       return NextResponse.json(
-        { error: "Artbook or post not found" },
+        { error: "Artbook or associated post not found" },
         { status: 404 }
       );
     }
 
-    // Get current user session for like status
-    const session = await auth.api.getSession({ 
-      headers: request.headers 
-    });
-
-    // Get total count for pagination
+    // Count total comments for pagination
     const totalComments = await prisma.comment.count({
       where: {
         postId: artbook.post.id,
@@ -224,7 +232,6 @@ export async function GET(
             },
             _count: {
               select: {
-                replies: true,
                 likes: true,
               },
             },
@@ -264,20 +271,42 @@ export async function GET(
     });
 
     // Transform the data to include like information in a cleaner format
-    const transformedComments = comments.map(comment => ({
-      ...comment,
+    const transformedComments = comments.map((comment) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      userId: comment.userId,
+      postId: comment.postId,
+      parentId: comment.parentId,
+      user: comment.user,
       likeCount: comment._count.likes,
       userLiked: session ? comment.likes.length > 0 : false,
-      replies: comment.replies.map(reply => ({
-        ...reply,
+      _count: {
+        replies: comment._count.replies,
+        likes: comment._count.likes,
+      },
+      replies: comment.replies.map((reply) => ({
+        id: reply.id,
+        content: reply.content,
+        createdAt: reply.createdAt,
+        updatedAt: reply.updatedAt,
+        userId: reply.userId,
+        postId: reply.postId,
+        parentId: reply.parentId,
+        user: reply.user,
         likeCount: reply._count.likes,
         userLiked: session ? reply.likes.length > 0 : false,
-        likes: undefined, // Remove the raw likes array from response
+        _count: {
+          likes: reply._count.likes,
+        },
       })),
-      likes: undefined, // Remove the raw likes array from response
     }));
 
+    // Calculate pagination info
     const totalPages = Math.ceil(totalComments / limit);
+    const hasNext = page < totalPages;
+    const hasPrev = page > 1;
 
     return NextResponse.json({
       comments: transformedComments,
@@ -286,13 +315,14 @@ export async function GET(
         limit,
         total: totalComments,
         totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
+        hasNext,
+        hasPrev,
       },
     });
 
   } catch (error) {
     console.error("Get comments error:", error);
+    
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

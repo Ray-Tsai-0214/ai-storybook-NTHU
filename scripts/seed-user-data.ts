@@ -1,6 +1,4 @@
-import { PrismaClient, Category } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma, Category } from "@/lib/prisma";
 
 const userEmail = "kienhong2000@hotmail.com";
 const userName = "Kien Hong";
@@ -332,7 +330,7 @@ async function seedUserData() {
               postId: post.id,
             },
           });
-        } catch (error) {
+        } catch {
           // Skip if like already exists
           continue;
         }
