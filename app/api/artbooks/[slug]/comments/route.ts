@@ -15,7 +15,6 @@ const createCommentSchema = z.object({
 
 // Helper function to sanitize HTML content
 function sanitizeContent(content: string): string {
-  // Remove any potential HTML tags and dangerous characters
   return content
     .replace(/<[^>]*>/g, '') // Remove HTML tags
     .replace(/javascript:/gi, '') // Remove javascript: protocols
@@ -51,7 +50,6 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    // Get session from Better Auth
     const session = await auth.api.getSession({
       headers: request.headers,
     });
@@ -67,10 +65,8 @@ export async function POST(
     const validatedData = createCommentSchema.parse(body);
     const { slug } = await params;
 
-    // Sanitize the content
     const sanitizedContent = sanitizeContent(validatedData.content);
 
-    // Find the artbook and its associated post
     const artbook = await prisma.artbook.findUnique({
       where: { slug },
       include: { post: true },
@@ -83,7 +79,6 @@ export async function POST(
       );
     }
 
-    // If replying to a comment, validate parent comment and check depth
     if (validatedData.parentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: validatedData.parentId },
@@ -104,7 +99,6 @@ export async function POST(
         );
       }
 
-      // Check nesting depth
       const depth = await getCommentDepth(validatedData.parentId);
       if (depth >= MAX_NESTING_DEPTH) {
         return NextResponse.json(
@@ -114,7 +108,6 @@ export async function POST(
       }
     }
 
-    // Create the comment
     const comment = await prisma.comment.create({
       data: {
         content: sanitizedContent,
@@ -139,11 +132,10 @@ export async function POST(
       },
     });
 
-    // Transform the comment to include like information
     const transformedComment = {
       ...comment,
       likeCount: comment._count.likes,
-      userLiked: false, // New comment, user hasn't liked it yet
+      userLiked: false,
     };
 
     return NextResponse.json({
@@ -176,17 +168,14 @@ export async function GET(
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
     
-    // Parse pagination parameters
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10')));
     const skip = (page - 1) * limit;
 
-    // Get session for like status
     const session = await auth.api.getSession({
       headers: request.headers,
     });
 
-    // Find the artbook and its associated post
     const artbook = await prisma.artbook.findUnique({
       where: { slug },
       include: { post: true },
@@ -199,19 +188,18 @@ export async function GET(
       );
     }
 
-    // Count total comments for pagination
     const totalComments = await prisma.comment.count({
       where: {
         postId: artbook.post.id,
-        parentId: null, // Only top-level comments
+        parentId: null,
       },
     });
 
-    // Get comments with replies and like information
+    // Use Prisma's findMany with include - Prisma will infer the return type
     const comments = await prisma.comment.findMany({
       where: {
         postId: artbook.post.id,
-        parentId: null, // Only top-level comments
+        parentId: null,
       },
       include: {
         user: {
@@ -270,8 +258,8 @@ export async function GET(
       take: limit,
     });
 
-    // Transform the data to include like information in a cleaner format
-    const transformedComments = comments.map((comment) => ({
+    // Transform comments with proper typing - Prisma infers the types
+    const transformedComments = comments.map(comment => ({
       id: comment.id,
       content: comment.content,
       createdAt: comment.createdAt,
@@ -286,7 +274,7 @@ export async function GET(
         replies: comment._count.replies,
         likes: comment._count.likes,
       },
-      replies: comment.replies.map((reply) => ({
+      replies: comment.replies.map(reply => ({
         id: reply.id,
         content: reply.content,
         createdAt: reply.createdAt,
@@ -303,7 +291,6 @@ export async function GET(
       })),
     }));
 
-    // Calculate pagination info
     const totalPages = Math.ceil(totalComments / limit);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
