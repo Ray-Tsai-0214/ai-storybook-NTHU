@@ -13,7 +13,7 @@ import {
 	RotateCcw,
 	Loader2,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
@@ -332,9 +332,9 @@ export function ReadingDialog({
 				{/* Header */}
 				<div className="flex items-center justify-between p-4 border-b bg-gray-50">
 					<div className="flex items-center gap-4">
-						<h2 className="text-lg font-semibold text-gray-900 font-['Comic_Neue']">
+						<DialogTitle className="text-lg font-semibold text-gray-900 font-['Comic_Neue']">
 							{artbook.title}
-						</h2>
+						</DialogTitle>
 						<span className="text-sm text-gray-500">
 							Page {currentPage} of {sortedPages.length}
 						</span>

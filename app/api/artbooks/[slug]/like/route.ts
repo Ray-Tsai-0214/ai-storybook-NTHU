@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { toggleArtbookLike, getArtbookLikeStatus } from "@/lib/api/likes";
 
 
 export async function POST(
@@ -22,55 +22,10 @@ export async function POST(
 
     const { slug } = await params;
 
-    // Find the artbook's post by slug
-    const artbook = await prisma.artbook.findUnique({
-      where: { slug },
-      include: { post: true },
-    });
+    // Toggle like using centralized API function
+    const result = await toggleArtbookLike(slug, session.user.id);
 
-    if (!artbook || !artbook.post) {
-      return NextResponse.json(
-        { error: "Artbook or post not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if user already liked this post
-    const existingLike = await prisma.like.findUnique({
-      where: {
-        userId_postId: {
-          userId: session.user.id,
-          postId: artbook.post.id,
-        },
-      },
-    });
-
-    if (existingLike) {
-      // Unlike: Remove the like
-      await prisma.like.delete({
-        where: {
-          id: existingLike.id,
-        },
-      });
-
-      return NextResponse.json({
-        message: "Post unliked successfully",
-        liked: false,
-      });
-    } else {
-      // Like: Add a new like
-      await prisma.like.create({
-        data: {
-          userId: session.user.id,
-          postId: artbook.post.id,
-        },
-      });
-
-      return NextResponse.json({
-        message: "Post liked successfully",
-        liked: true,
-      });
-    }
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error("Like/unlike error:", error);
@@ -88,51 +43,15 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    // Get the artbook's post with like count by slug
-    const artbook = await prisma.artbook.findUnique({
-      where: { slug },
-      include: {
-        post: {
-          include: {
-            _count: {
-              select: {
-                likes: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!artbook || !artbook.post) {
-      return NextResponse.json(
-        { error: "Artbook or post not found" },
-        { status: 404 }
-      );
-    }
-
-    // Check if current user liked this post
-    let userLiked = false;
+    // Get session for user-specific like status
     const session = await auth.api.getSession({ 
       headers: request.headers 
     });
 
-    if (session) {
-      const existingLike = await prisma.like.findUnique({
-        where: {
-          userId_postId: {
-            userId: session.user.id,
-            postId: artbook.post.id,
-          },
-        },
-      });
-      userLiked = !!existingLike;
-    }
+    // Get like status using centralized API function
+    const result = await getArtbookLikeStatus(slug, session?.user.id);
 
-    return NextResponse.json({
-      likeCount: artbook.post._count.likes,
-      userLiked,
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error("Get likes error:", error);

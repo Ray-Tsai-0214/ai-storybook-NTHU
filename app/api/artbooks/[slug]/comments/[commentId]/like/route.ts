@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { toggleCommentLike, getCommentLikeStatus } from "@/lib/api/likes";
 
 
 // GET: Check if user liked a comment
@@ -23,57 +23,10 @@ export async function GET(
 
     const { slug, commentId } = await params;
 
-    // Find the artbook's post
-    const artbook = await prisma.artbook.findUnique({
-      where: { slug },
-      include: { post: true },
-    });
+    // Get comment like status using centralized API function
+    const result = await getCommentLikeStatus(commentId, slug, session.user.id);
 
-    if (!artbook || !artbook.post) {
-      return NextResponse.json(
-        { error: "Artbook or post not found" },
-        { status: 404 }
-      );
-    }
-
-    // Find the comment and verify it belongs to this post
-    const comment = await prisma.comment.findUnique({
-      where: { id: commentId },
-    });
-
-    if (!comment) {
-      return NextResponse.json(
-        { error: "Comment not found" },
-        { status: 404 }
-      );
-    }
-
-    if (comment.postId !== artbook.post.id) {
-      return NextResponse.json(
-        { error: "Comment does not belong to this artbook" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user liked this comment
-    const existingLike = await prisma.commentLike.findUnique({
-      where: {
-        userId_commentId: {
-          userId: session.user.id,
-          commentId: commentId,
-        },
-      },
-    });
-
-    // Get total like count
-    const likeCount = await prisma.commentLike.count({
-      where: { commentId: commentId },
-    });
-
-    return NextResponse.json({
-      userLiked: !!existingLike,
-      likeCount,
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error("Check comment like error:", error);
@@ -104,77 +57,10 @@ export async function POST(
 
     const { slug, commentId } = await params;
 
-    // Find the artbook's post
-    const artbook = await prisma.artbook.findUnique({
-      where: { slug },
-      include: { post: true },
-    });
+    // Toggle comment like using centralized API function
+    const result = await toggleCommentLike(commentId, slug, session.user.id);
 
-    if (!artbook || !artbook.post) {
-      return NextResponse.json(
-        { error: "Artbook or post not found" },
-        { status: 404 }
-      );
-    }
-
-    // Find the comment and verify it belongs to this post
-    const comment = await prisma.comment.findUnique({
-      where: { id: commentId },
-    });
-
-    if (!comment) {
-      return NextResponse.json(
-        { error: "Comment not found" },
-        { status: 404 }
-      );
-    }
-
-    if (comment.postId !== artbook.post.id) {
-      return NextResponse.json(
-        { error: "Comment does not belong to this artbook" },
-        { status: 400 }
-      );
-    }
-
-    // Check if user already liked this comment
-    const existingLike = await prisma.commentLike.findUnique({
-      where: {
-        userId_commentId: {
-          userId: session.user.id,
-          commentId: commentId,
-        },
-      },
-    });
-
-    let liked = false;
-
-    if (existingLike) {
-      // Unlike: Remove the like
-      await prisma.commentLike.delete({
-        where: { id: existingLike.id },
-      });
-      liked = false;
-    } else {
-      // Like: Add the like
-      await prisma.commentLike.create({
-        data: {
-          userId: session.user.id,
-          commentId: commentId,
-        },
-      });
-      liked = true;
-    }
-
-    // Get updated like count
-    const likeCount = await prisma.commentLike.count({
-      where: { commentId: commentId },
-    });
-
-    return NextResponse.json({
-      liked,
-      likeCount,
-      message: liked ? "Comment liked" : "Comment unliked",
-    });
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error("Toggle comment like error:", error);

@@ -45,7 +45,13 @@ export type ReportCategory =
   | 'harassment'
   | 'violence'
   | 'adult'
-  | 'other';
+  | 'other'
+  | 'inappropriate-content'
+  | 'copyright-violation'
+  | 'spam-misleading'
+  | 'harassment-bullying'
+  | 'violence-gore'
+  | 'adult-content';
 
 export interface ReportRequest {
   category: ReportCategory;

@@ -1,310 +1,304 @@
 # CLAUDE.md - AI Artbook Platform Development Memory
 
-## 🎯 專案概述
-**專案名稱**: AI Artbook Platform (品牌名: Storyr)
-**專案描述**: 使用 AI 創建、瀏覽和分享圖畫書的線上平台
+## 🎯 Project Overview
+**Project Name**: AI Artbook Platform (Brand: Storyr)
+**Description**: Online platform for creating, browsing, and sharing picture books using AI
 **GitHub Repo**: https://github.com/Meowbotz-ll/ai-storybook
-**技術棧**: Next.js 15, React, shadcn/ui, OpenAI API, Prisma, NeonDB
+**Tech Stack**: Next.js 15, React, shadcn/ui, OpenAI API, Prisma, NeonDB
 
-## 📋 重要指令
+## 📋 Essential Commands
 ```bash
-# 開發環境
-npm run dev --turbopack  # 啟動開發伺服器 with Turbopack (port 3000)
-npm run build            # 建構生產版本
-npm run start            # 啟動生產伺服器
-npm run lint             # 執行程式碼檢查
-npx tsc --noEmit        # TypeScript 類型檢查
+# Development Environment
+npm run dev --turbopack  # Start development server with Turbopack (port 3000)
+npm run build            # Build production version
+npm run start            # Start production server
+npm run lint             # Run code linting
+npx tsc --noEmit        # TypeScript type checking
 
-# Git 工作流程
-git pull origin master    # 開始工作前同步
-git add .                 # 暫存更改
-git commit -m "訊息"      # 提交更改
-git push origin master    # 推送到遠端
+# Git Workflow
+git pull origin master    # Sync before starting work
+git add .                 # Stage changes
+git commit -m "message"   # Commit changes
+git push origin master    # Push to remote
 ```
 
-## 🏗️ 專案結構
+## 🏗️ Project Structure
 ```
-/app              # Next.js App Router 頁面
-  /api            # API 路由
-    /auth         # Better Auth 認證端點
-    /artbooks     # 繪本 CRUD 操作
-      /[slug]     # 使用 slug 參數的繪本路由 (取代 UUID)
-        /like     # 按讚功能
-        /view     # 瀏覽量統計
-        /comments # 評論系統
-    /user         # 用戶資料管理
-    /generate-outline          # 故事大綱生成 (GPT-4)
-    /generate-story           # 完整故事生成 (GPT-4)
-    /generate-image           # 圖片生成 (DALL-E 3)
-    /generate-consistent-image # 一致性圖片生成
-    /generate-audio           # 音頻生成 (TTS)
-    /extract-character-info    # 角色特徵提取
-  /auth           # 認證頁面 (整合到專用目錄)
-    /login        # 登入頁面 (無側邊欄)
-    /signup       # 註冊頁面 (無側邊欄)
-  /(root)         # 主應用頁面 (含側邊欄) - Route Group
-    /artbook      # 繪本相關頁面
-      /[slug]     # 使用 slug 的繪本詳情頁
-    /create       # 創建繪本頁面
-    /discovery    # 探索頁面
-    /profile      # 個人檔案頁面
-    /page.tsx     # 首頁
-/components       # React 元件
-  /ui             # shadcn/ui 元件庫
-  /artbook        # 繪本創作組件
-  /discovery      # 探索頁面組件
-  /profile        # 個人資料組件
-/lib              # 工具函數和 API 客戶端
-  /api            # OpenAI API 整合
-  /stores         # Zustand 狀態管理
-/prisma           # 資料庫 schema 和遷移
-/messages         # 翻譯檔案 (en.json, zh-TW.json)
+/app              # Next.js App Router pages
+  /api            # API routes
+    /auth         # Better Auth endpoints
+    /artbooks     # Artbook CRUD operations
+      /[slug]     # Artbook routes using slug parameters (replacing UUID)
+        /like     # Like functionality
+        /view     # View tracking
+        /comments # Comment system
+    /user         # User data management
+    /generate-outline          # Story outline generation (GPT-4)
+    /generate-story           # Complete story generation (GPT-4)
+    /generate-image           # Image generation (DALL-E 3)
+    /generate-consistent-image # Consistent image generation
+    /generate-audio           # Audio generation (TTS)
+    /extract-character-info    # Character feature extraction
+  /auth           # Authentication pages (dedicated directory)
+    /login        # Login page (no sidebar)
+    /signup       # Signup page (no sidebar)
+  /(root)         # Main app pages (with sidebar) - Route Group
+    /artbook      # Artbook-related pages
+      /[slug]     # Artbook detail page using slug
+    /create       # Create artbook page
+    /discovery    # Discovery page
+    /profile      # Profile page
+    /page.tsx     # Homepage
+/components       # React components
+  /ui             # shadcn/ui component library
+  /artbook        # Artbook creation components
+  /discovery      # Discovery page components
+  /profile        # Profile components
+/lib              # Utility functions and API clients
+  /api            # Centralized database operations (refactored)
+  /stores         # Zustand state management
+/prisma           # Database schema and migrations
+/messages         # Translation files (en.json, zh-TW.json)
 ```
 
-## 🎨 設計系統
-- **主色調**: 橘色 (#FF6900)
-- **背景色**: 白色 (#FFFFFF)
-- **側邊欄**: 淺橘色 (#FFEDD4)
-- **字體**: Syne, Manrope, Comic Neue, Playfair Display
-- **陰影效果**: Neumorphic 風格
+## 🎨 Design System
+- **Primary Color**: Orange (#FF6900)
+- **Background**: White (#FFFFFF)
+- **Sidebar**: Light Orange (#FFEDD4)
+- **Fonts**: Syne, Manrope, Comic Neue, Playfair Display
+- **Effects**: Neumorphic style shadows
 
-## 🤖 AI 整合
-### 文字生成 (GPT-4)
-- **故事大綱生成** (`/api/generate-outline`)
-  - 溫度: 0.7, 最大 tokens: 1000
-  - 自動分頁功能
-- **故事內容生成** (`/api/generate-story`)
-- **角色特徵提取** (`/api/extract-character-info`)
-  - 自動分析角色外觀特徵
-  - 用於保持圖片一致性
+## 🤖 AI Integration
+### Text Generation (GPT-4)
+- **Story Outline Generation** (`/api/generate-outline`)
+  - Temperature: 0.7, Max tokens: 1000
+  - Automatic pagination feature
+- **Story Content Generation** (`/api/generate-story`)
+- **Character Feature Extraction** (`/api/extract-character-info`)
+  - Automatic analysis of character appearance
+  - Used for maintaining image consistency
 
-### 圖片生成 (DALL-E 3)
-- **基礎圖片生成** (`/api/generate-image`)
-  - 模型: dall-e-3
-  - 尺寸: 1024x1024
-  - 品質: standard
-- **一致性圖片生成** (`/api/generate-consistent-image`)
-  - 智能角色特徵延續
-  - 多頁面視覺一致性
-- **優化特色**:
-  - 兒童友善內容過濾
-  - 無邊框純淨插畫
-  - 卡通風格優化
+### Image Generation (DALL-E 3)
+- **Basic Image Generation** (`/api/generate-image`)
+  - Model: dall-e-3
+  - Size: 1024x1024
+  - Quality: standard
+- **Consistent Image Generation** (`/api/generate-consistent-image`)
+  - Smart character feature continuation
+  - Multi-page visual consistency
+- **Optimization Features**:
+  - Child-friendly content filtering
+  - Borderless clean illustrations
+  - Cartoon style optimization
 
-### 音頻生成 (TTS-1)
-- **語音合成** (`/api/generate-audio`)
-  - 模型: TTS-1 with 'alloy' voice
-  - 支援中英文內容
+### Audio Generation (TTS-1)
+- **Voice Synthesis** (`/api/generate-audio`)
+  - Model: TTS-1 with 'alloy' voice
+  - Supports Chinese and English content
 
-### 環境變數
-- `OPENAI_API_KEY` (必需)
+### Environment Variables
+- `OPENAI_API_KEY` (required)
 - `DATABASE_URL` (NeonDB PostgreSQL)
-- `BETTER_AUTH_SECRET` (認證加密金鑰)
+- `BETTER_AUTH_SECRET` (authentication encryption key)
 
-## 📈 當前進度
-### ✅ 已完成功能
-- [x] 基本專案架構和路由設定
-- [x] **用戶認證系統 (Better Auth)** ⭐ 完成
-- [x] **資料庫整合 (Prisma + NeonDB)** ⭐ 完成
-- [x] 多語言支援框架 (中英文)
-- [x] 側邊欄可收合功能 (270px ↔ 70px)
-- [x] 创建繪本頁面 (多頁導航系統)
-- [x] AI 故事生成整合 (GPT-4)
-- [x] **圖片生成整合 (DALL-E 3)** ⭐ 完成
-- [x] **圖片一致性系統** ⭐ 完成
-- [x] **音頻生成整合 (TTS-1)** ⭐ 完成
-- [x] 預覽和閱讀界面
-- [x] 新設計系統實施 (橘色主題)
-- [x] **社交功能 (按讚/評論)** ⭐ 完成
-- [x] **個人檔案頁面** ⭐ 完成
-- [x] **Route Groups 架構** ⭐ 完成
-- [x] **SEO 友善 URL (Slug 系統)** ⭐ 完成
-- [x] **完整評論系統 (嵌套回覆 + 按讚)** ⭐ 完成
-- [x] **用戶首頁繪本管理 (編輯/刪除)** ⭐ 完成
-- [x] **沉浸式閱讀對話框** ⭐ 完成
-- [x] **繪本舉報功能** ⭐ 完成
+## 📈 Current Progress
+### ✅ Completed Features
+- [x] Basic project architecture and routing setup
+- [x] **User Authentication System (Better Auth)** ⭐ Complete
+- [x] **Database Integration (Prisma + NeonDB)** ⭐ Complete
+- [x] **Centralized API Architecture** ⭐ Complete
+- [x] Multi-language support framework (Chinese/English)
+- [x] Collapsible sidebar functionality (270px ↔ 70px)
+- [x] Create artbook page (multi-page navigation system)
+- [x] AI story generation integration (GPT-4)
+- [x] **Image Generation Integration (DALL-E 3)** ⭐ Complete
+- [x] **Image Consistency System** ⭐ Complete
+- [x] **Audio Generation Integration (TTS-1)** ⭐ Complete
+- [x] Preview and reading interface
+- [x] New design system implementation (orange theme)
+- [x] **Social Features (likes/comments)** ⭐ Complete
+- [x] **Profile Page** ⭐ Complete
+- [x] **Route Groups Architecture** ⭐ Complete
+- [x] **SEO-Friendly URLs (Slug System)** ⭐ Complete
+- [x] **Complete Comment System (nested replies + likes)** ⭐ Complete
+- [x] **User Home Artbook Management (edit/delete)** ⭐ Complete
+- [x] **Immersive Reading Dialog** ⭐ Complete
+- [x] **Artbook Report Functionality** ⭐ Complete
+- [x] **Accessibility Improvements** ⭐ Complete
 
-### 🚧 進行中任務
-- [ ] AWS S3 媒體儲存整合
-- [ ] PDF/PNG 匯出功能
-- [ ] 使用限制 (10本/天, 10頁/本)
+### 🚧 In Progress
+- [ ] AWS S3 media storage integration
+- [ ] PDF/PNG export functionality
+- [ ] Usage limits (10 books/day, 10 pages/book)
 
-### 📅 待開發功能
-- [ ] 探索頁面進階篩選功能
-- [ ] 繪本分享連結生成
-- [ ] 管理員後台
-- [ ] 行動裝置優化
+### 📅 Planned Features
+- [ ] Advanced filtering for discovery page
+- [ ] Artbook sharing link generation
+- [ ] Admin dashboard
+- [ ] Mobile device optimization
 
-## 🔥 核心功能詳解
-### 圖片一致性系統
-1. **智能角色記憶**：第1頁生成圖片後自動提取角色特徵
-2. **延續性生成**：後續頁面自動融合角色特徵與新場景
-3. **視覺一致性**：確保主角在所有頁面保持相同外觀
-4. **用戶體驗**：橘色提示框顯示已記錄的角色特徵
+## 🔥 Core Feature Details
+### Image Consistency System
+1. **Smart Character Memory**: Automatically extracts character features after generating the first page image
+2. **Continuity Generation**: Subsequent pages automatically merge character features with new scenes
+3. **Visual Consistency**: Ensures main characters maintain the same appearance across all pages
+4. **User Experience**: Orange notification boxes display recorded character features
 
-### Create Artbook 頁面功能
-- **雙欄佈局**：左側預覽區 + 右側編輯區
-- **多頁導航**：頁碼切換、新增/刪除頁面
-- **實時預覽**：生成的圖片即時顯示
-- **重新生成**：圖片右上角一鍵重生成
-- **智能提示**：不同頁面提供相應的輸入指引
-- **用戶認證整合**：需登入才能創建
-- **資料庫儲存**：完整的繪本資料保存
+### Create Artbook Page Features
+- **Dual-Column Layout**: Left preview area + right editing area
+- **Multi-Page Navigation**: Page switching, add/delete pages
+- **Real-Time Preview**: Generated images displayed instantly
+- **Regeneration**: One-click regenerate button in top-right of images
+- **Smart Prompts**: Different pages provide relevant input guidance
+- **User Authentication Integration**: Login required to create
+- **Database Storage**: Complete artbook data persistence
 
-### 組件架構
-**重要**: 每個組件都分割成獨立檔案以提高可維護性和重用性
+### Component Architecture
+**Important**: Each component is split into separate files for better maintainability and reusability
 
 ```
 components/
 ├── profile/
-│   ├── profile-info-form.tsx     # 個人資料表單 (✅ 完成)
-│   └── password-change-form.tsx  # 密碼變更表單 (✅ 完成)
+│   ├── profile-info-form.tsx     # Profile form (✅ Complete)
+│   └── password-change-form.tsx  # Password change form (✅ Complete)
 ├── artbook/
-│   ├── artbook-metadata-form.tsx # 繪本元資料表單 (✅ 完成)
-│   ├── page-preview.tsx          # 頁面圖片預覽 (✅ 完成)
-│   ├── story-outline-section.tsx # 故事生成區域 (✅ 完成)
-│   ├── image-generation-section.tsx # 圖片生成區域 (✅ 完成)
-│   └── audio-generation-section.tsx # 音頻生成區域 (✅ 完成)
+│   ├── artbook-metadata-form.tsx # Artbook metadata form (✅ Complete)
+│   ├── page-preview.tsx          # Page image preview (✅ Complete)
+│   ├── story-outline-section.tsx # Story generation area (✅ Complete)
+│   ├── image-generation-section.tsx # Image generation area (✅ Complete)
+│   ├── audio-generation-section.tsx # Audio generation area (✅ Complete)
+│   ├── reading-dialog.tsx        # Immersive reading dialog (✅ Complete)
+│   └── comments/                 # Complete comment system (✅ Complete)
 ├── discovery/
-│   ├── filters-bar.tsx           # 分類和排序篩選 (✅ 完成)
-│   └── artbook-card.tsx          # 繪本卡片 (✅ 完成)
+│   ├── filters-bar.tsx           # Category and sort filters (✅ Complete)
+│   └── artbook-card.tsx          # Artbook cards (✅ Complete)
 └── ui/                          # Reusable UI components (shadcn/ui)
 ```
 
-#### 架構優化重點
-- **Route Groups**: 使用 `(root)` 組織主應用頁面，確保側邊欄僅在需要時顯示
-- **認證流程分離**: `/auth/*` 路由提供無干擾的登入/註冊體驗
-- **簡化側邊欄**: 移除冗餘的 UserNav 組件和類別下拉選單
+### Centralized API Architecture
+**New**: Database operations are now centralized in `/lib/api/` for better separation of concerns
 
-## 🐛 已知問題
-- [x] ~~圖片生成帶有書本邊框問題~~ (已解決)
-- [ ] 側邊欄在某些情況下間距需要調整
-- [ ] 行動裝置響應式設計待優化
+```
+/lib/api/
+├── artbooks.ts    # All artbook CRUD operations
+├── comments.ts    # Comment system operations
+├── likes.ts       # Like/unlike operations
+├── users.ts       # User management operations
+├── reports.ts     # Report functionality
+└── views.ts       # View tracking operations
+```
 
-## 💡 開發注意事項
-1. **環境變數**: 確保設定 `OPENAI_API_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET`
-2. **圖片生成 PROMPT**: 避免使用 "children's book illustration" 等會產生邊框的詞彙
-3. **圖片一致性**: 第1頁描述要詳細，包含角色外觀特徵
-4. **TypeScript**: 編輯任何 TypeScript 檔案後執行 `npx tsc --noEmit`
-5. **組件架構**: 每個組件應分割成獨立檔案，避免在 page.tsx 中寫所有組件
-6. **Git 提交**: 使用描述性的提交訊息
-7. **程式碼風格**: 遵循現有的程式碼慣例
-8. **測試**: 在推送前確保功能正常運作
-9. **文檔更新**: 重要更改請同步更新此文件
-10. **開發伺服器**: 使用 `npm run dev --turbopack` 啟動，Claude 不會自動執行
+#### Architecture Benefits
+- **Separation of Concerns**: Routes handle HTTP, API functions handle database logic
+- **Reusability**: Database operations can be shared across multiple routes
+- **Better Testability**: API functions can be unit tested independently
+- **Maintainability**: Centralized database operations are easier to modify
+- **No Direct Prisma in Routes**: Clean route files without database coupling
 
-## 🎯 圖片生成最佳實踐
-### 推薦 PROMPT 關鍵詞
+#### Optimization Highlights
+- **Route Groups**: Uses `(root)` to organize main app pages, ensuring sidebar only shows when needed
+- **Separated Auth Flow**: `/auth/*` routes provide distraction-free login/signup experience
+- **Simplified Sidebar**: Removed redundant UserNav component and category dropdown
+
+## 🐛 Known Issues
+- [x] ~~Image generation with book borders issue~~ (Resolved)
+- [x] ~~DialogContent accessibility issue~~ (Resolved)
+- [ ] Sidebar spacing needs adjustment in some cases
+- [ ] Mobile responsive design optimization needed
+
+## 💡 Development Guidelines
+1. **Environment Variables**: Ensure `OPENAI_API_KEY`, `DATABASE_URL`, `BETTER_AUTH_SECRET` are set
+2. **Image Generation PROMPTS**: Avoid using "children's book illustration" and similar terms that create borders
+3. **Image Consistency**: First page descriptions should be detailed, including character appearance
+4. **TypeScript**: Run `npx tsc --noEmit` after editing any TypeScript files
+5. **Component Architecture**: Each component should be in separate files, avoid writing all components in page.tsx
+6. **Git Commits**: Use descriptive commit messages
+7. **Code Style**: Follow existing code conventions
+8. **Testing**: Ensure functionality works before pushing
+9. **Documentation**: Update this file when making important changes
+10. **Development Server**: Use `npm run dev --turbopack` to start, Claude won't auto-execute
+11. **API Architecture**: Use centralized API functions instead of direct Prisma imports in routes
+12. **Accessibility**: Ensure all Dialog components have proper DialogTitle for screen readers
+
+## 🎯 Image Generation Best Practices
+### Recommended PROMPT Keywords
 - ✅ `clean illustration`, `flat design`, `cartoon style`
 - ✅ `colorful artwork`, `digital painting`, `no borders`
 
-### 避免的關鍵詞  
+### Keywords to Avoid
 - ❌ `children's book illustration`, `storybook art`
 - ❌ `book page`, `picture book`, `page illustration`
 
-### PROMPT 模板
+### PROMPT Template
 ```
-第1頁（封面）：[主角詳細外觀], [動作/姿勢], [環境背景], cartoon style, colorful, clean flat illustration, no borders
-後續頁面：[場景描述], [動作], vibrant colors, cartoon illustration, clean artwork, no frames
+First Page (Cover): [detailed character appearance], [action/pose], [environment background], cartoon style, colorful, clean flat illustration, no borders
+Subsequent Pages: [scene description], [action], vibrant colors, cartoon illustration, clean artwork, no frames
 ```
 
-## 🔐 認證系統
-### Better Auth 整合
-- **登入/註冊**: 完整的用戶認證流程
-- **會話管理**: 安全的會話處理
-- **用戶狀態**: Zustand store 管理認證狀態
-- **保護路由**: 創建繪本需要登入
+## 🔐 Authentication System
+### Better Auth Integration
+- **Login/Signup**: Complete user authentication flow
+- **Session Management**: Secure session handling
+- **User State**: Zustand store manages authentication state
+- **Protected Routes**: Login required to create artbooks
 
-### 資料庫 Schema (Prisma)
-主要實體：
-- **Users**: 用戶資料
-- **Artbooks**: 繪本資料 (標題、slug、內容、可見性)
-- **Pages**: 繪本頁面 (故事文字、圖片URL、音頻URL)
-- **Likes**: 用戶按讚關係
-- **Comments**: 評論系統 (支援回覆)
-- **Views**: 瀏覽量追蹤
+### Database Schema (Prisma)
+Main Entities:
+- **Users**: User data
+- **Artbooks**: Artbook data (title, slug, content, visibility)
+- **Pages**: Artbook pages (story text, image URL, audio URL)
+- **Likes**: User like relationships
+- **Comments**: Comment system (supports replies and likes)
+- **Views**: View tracking
+- **Reports**: Content reporting system
 
-### 新增功能重點
-#### SEO 友善 URL 系統 (Slug)
-- **自動 Slug 生成**: 從繪本標題自動產生 URL 友善的 slug
-- **唯一性保證**: 自動處理重複 slug，添加數字後綴
-- **URL 格式**: `/artbook/my-fairy-tale-story` (取代 UUID)
-- **向下相容**: 保留 ID 欄位用於內部關聯
+### Key Features
+#### SEO-Friendly URL System (Slug)
+- **Auto Slug Generation**: Automatically generates URL-friendly slugs from artbook titles
+- **Uniqueness Guarantee**: Automatically handles duplicate slugs by adding numeric suffixes
+- **URL Format**: `/artbook/my-fairy-tale-story` (replaces UUID)
+- **Backward Compatibility**: Retains ID field for internal relationships
 
-## 📝 工作日誌
-### 2025-06-26 (第一次工作階段)
-- 初始化 CLAUDE.md 文件
-- 分析專案結構和文檔
-- 設定開發環境記憶架構
+## 📝 Work Log
+### 2025-07-01 (API Refactoring Session)
+- ✅ **Complete API Architecture Refactoring**
+  - Created 6 centralized API modules in `/lib/api/`
+  - Refactored 11 route files to remove direct Prisma imports
+  - Implemented proper separation of concerns
+  - All TypeScript type checks pass
+- ✅ **Accessibility Improvements**
+  - Fixed DialogContent accessibility issue in ReadingDialog component
+  - Added proper DialogTitle for screen reader support
+- ✅ **Enhanced Type Safety**
+  - Updated ReportCategory types to match route expectations
+  - Fixed Prisma enum compatibility issues
+  - Maintained existing type structure
 
-### 2025-06-26 (第二次工作階段)
-- ✅ **完成 DALL-E 3 圖片生成整合**
-  - 建立 `/api/generate-image` 基礎圖片生成 API
-  - 建立 `/api/generate-consistent-image` 一致性圖片生成 API
-  - 建立 `/api/extract-character-info` 角色特徵提取 API
-- ✅ **實作圖片一致性系統**
-  - 智能角色記憶功能
-  - 多頁面視覺延續性
-  - 角色特徵自動提取與融合
-- ✅ **優化 Create Artbook 頁面**
-  - 圖片預覽區域升級
-  - 重新生成按鈕整合
-  - 角色特徵記錄顯示區域
-  - 智能提示詞指引
-- ✅ **解決圖片邊框問題**
-  - 移除會產生書本邊框的關鍵詞
-  - 優化 PROMPT 模板
-  - 制定圖片生成最佳實踐指南
-- ✅ **合併遠端更新**
-  - 整合用戶認證系統 (Better Auth)
-  - 整合資料庫功能 (Prisma + NeonDB)
-  - 整合音頻生成功能 (TTS-1)
-  - 整合社交功能 (按讚/評論)
-  - 整合組件架構重構
-
-### 2025-06-30 (第三次工作階段)
-- ✅ **TypeScript 錯誤修復**
-  - 修復 'any' 類型錯誤
-  - 清理未使用的 imports 和變數
-  - 修復 useEffect 依賴警告
-  - 替換 img 標籤為 Next.js Image 組件
-- ✅ **專案架構重組**
-  - 實施 Route Groups 架構 `(root)` 和 `auth/`
-  - 分離認證頁面和主應用頁面
-  - 重組側邊欄佈局系統
-  - 移除冗餘的 UserNav 組件和類別選單
-- ✅ **SEO 友善 URL 系統 (Slug)**
-  - 新增 slug 欄位到資料庫 schema
-  - 實作自動 slug 生成邏輯
-  - 更新所有 API 路由使用 slug 參數
-  - 修改前端頁面和連結使用 slug
-  - 執行資料庫 migration
-
-### 2025-06-30 (第四次工作階段)
-- ✅ **評論系統完整實現**
-  - 建立完整的評論 API 端點 (GET, POST, PUT, DELETE)
-  - 實作嵌套回覆功能 (最多2層)
-  - 創建評論 UI 組件系統 (CommentSection, CommentList, CommentItem, CommentForm, CommentActions)
-  - 整合評論區到繪本詳情頁面，支援即時評論數更新
-- ✅ **用戶首頁管理功能**
-  - 實作繪本編輯/刪除 API 端點
-  - 創建編輯繪本模態框組件
-  - 添加管理卡片組件，支援懸停顯示操作按鈕
-  - 實現樂觀更新和確認對話框
-- ✅ **評論按讚系統**
-  - 新增 CommentLike 資料庫模型
-  - 建立評論按讚 API 端點 (GET, POST)
-  - 更新評論 UI 組件支援按讚功能
-  - 實作樂觀更新和動畫效果
-- ✅ **繪本頁面簡化和閱讀體驗優化**
-  - 簡化繪本詳情頁面，移除音頻播放、頁面導航、頁碼顯示
-  - 突出顯示繪本封面，添加"立即閱讀"按鈕
-  - 創建沉浸式閱讀對話框 (ReadingDialog)
-  - 實作舉報繪本功能 (ReportArtbookDialog)
-  - 左右分欄閱讀界面：左側圖片，右側內容和音頻播放器
+### 2025-06-30 (Previous Sessions)
+- ✅ **Comment System Complete Implementation**
+  - Built complete comment API endpoints (GET, POST, PUT, DELETE)
+  - Implemented nested reply functionality (max 2 levels)
+  - Created comment UI component system
+  - Integrated comment section into artbook detail pages with real-time count updates
+- ✅ **User Home Management Features**
+  - Implemented artbook edit/delete API endpoints
+  - Created edit artbook modal component
+  - Added management card component with hover action buttons
+  - Implemented optimistic updates and confirmation dialogs
+- ✅ **Comment Like System**
+  - Added CommentLike database model
+  - Built comment like API endpoints (GET, POST)
+  - Updated comment UI components to support like functionality
+  - Implemented optimistic updates and animations
+- ✅ **Artbook Page Simplification and Reading Experience Optimization**
+  - Simplified artbook detail page, removed audio playback, page navigation, page numbers
+  - Highlighted artbook cover, added "Read Now" button
+  - Created immersive reading dialog (ReadingDialog)
+  - Implemented artbook report functionality (ReportArtbookDialog)
+  - Left-right column reading interface: left image, right content and audio player
 
 ---
-**最後更新**: 2025-06-30 20:30
-**更新者**: Claude Code
+**Last Updated**: 2025-07-01 12:00
+**Updated By**: Claude Code
 
-> 💡 **使用提示**: 每次開始新的工作階段時，請先查看此文件了解最新進度。完成重要更改後，請更新相關章節並提交。
+> 💡 **Usage Note**: Check this file at the beginning of each work session to understand the latest progress. Update relevant sections after making important changes and commit.

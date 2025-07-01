@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { updateUserProfile, validateProfileData } from "@/lib/api/users";
 
 
 // Input validation schema
@@ -29,22 +29,8 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = updateProfileSchema.parse(body);
 
-    // Update user profile (name and image only)
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        name: validatedData.name,
-        image: validatedData.image,
-        updatedAt: new Date(),
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        updatedAt: true,
-      }
-    });
+    // Update user profile using centralized API function
+    const updatedUser = await updateUserProfile(session.user.id, validatedData);
 
     return NextResponse.json({
       message: "Profile updated successfully",

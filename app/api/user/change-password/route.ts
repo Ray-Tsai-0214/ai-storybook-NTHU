@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { changeUserPassword, validatePasswordData } from "@/lib/api/users";
 
 
 // Input validation schema
@@ -30,46 +29,8 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = changePasswordSchema.parse(body);
 
-    // Find user's account with password
-    const account = await prisma.account.findFirst({
-      where: {
-        userId: session.user.id,
-        providerId: "credential", // Better Auth uses "credential" for email/password
-        password: { not: null }
-      }
-    });
-
-    if (!account || !account.password) {
-      return NextResponse.json(
-        { error: "No password found for this account" },
-        { status: 400 }
-      );
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(
-      validatedData.currentPassword,
-      account.password
-    );
-
-    if (!isCurrentPasswordValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      );
-    }
-
-    // Hash new password
-    const hashedNewPassword = await bcrypt.hash(validatedData.newPassword, 12);
-
-    // Update password in the account
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        password: hashedNewPassword,
-        updatedAt: new Date(),
-      }
-    });
+    // Change password using centralized API function
+    await changeUserPassword(session.user.id, validatedData);
 
     return NextResponse.json({
       message: "Password changed successfully",

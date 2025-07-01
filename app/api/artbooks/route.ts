@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { createArtbook, getArtbooks } from "@/lib/api/artbooks";
 
-// Function to generate a URL-friendly slug
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-}
 
 
 // Input validation schema
@@ -48,56 +39,8 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = createArtbookSchema.parse(body);
 
-    // Generate a unique slug
-    const baseSlug = generateSlug(validatedData.title);
-    let slug = baseSlug;
-    let counter = 1;
-    
-    // Ensure slug is unique
-    while (await prisma.artbook.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
-
-    // Create artbook with pages in a transaction
-    const artbook = await prisma.$transaction(async (tx) => {
-      // Create the artbook
-      const newArtbook = await tx.artbook.create({
-        data: {
-          title: validatedData.title,
-          slug: slug,
-          description: validatedData.description,
-          coverPhoto: validatedData.coverPhoto,
-          category: validatedData.category,
-          isPublic: validatedData.isPublic,
-          authorId: session.user.id,
-        },
-      });
-
-      // Create pages
-      const pages = await Promise.all(
-        validatedData.pages.map((page) =>
-          tx.page.create({
-            data: {
-              pageNumber: page.pageNumber,
-              content: page.content,
-              picture: page.picture,
-              audio: page.audio,
-              artbookId: newArtbook.id,
-            },
-          })
-        )
-      );
-
-      // Create post for social features
-      const post = await tx.post.create({
-        data: {
-          artbookId: newArtbook.id,
-        },
-      });
-
-      return { ...newArtbook, pages, post };
-    });
+    // Create artbook using centralized API function
+    const artbook = await createArtbook(validatedData, session.user.id);
 
     return NextResponse.json({
       message: "Artbook created successfully",
@@ -128,50 +71,15 @@ export async function GET(request: NextRequest) {
     const authorId = searchParams.get('authorId');
     const isPublic = searchParams.get('isPublic');
 
-    const where: Record<string, unknown> = {};
-    
-    if (category && ['ADVENTURE', 'HORROR', 'ACTION', 'ROMANTIC', 'FIGURE'].includes(category.toUpperCase())) {
-      where.category = category.toUpperCase();
-    }
-    
-    if (authorId) {
-      where.authorId = authorId;
-    }
-    
-    if (isPublic !== null) {
-      where.isPublic = isPublic === 'true';
-    }
+    // Build filters object
+    const filters = {
+      ...(category && { category }),
+      ...(authorId && { authorId }),
+      ...(isPublic !== null && { isPublic: isPublic === 'true' }),
+    };
 
-    const artbooks = await prisma.artbook.findMany({
-      where,
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        pages: {
-          orderBy: {
-            pageNumber: 'asc',
-          },
-        },
-        post: {
-          include: {
-            _count: {
-              select: {
-                likes: true,
-                comments: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    // Get artbooks using centralized API function
+    const artbooks = await getArtbooks(filters);
 
     return NextResponse.json({
       artbooks,

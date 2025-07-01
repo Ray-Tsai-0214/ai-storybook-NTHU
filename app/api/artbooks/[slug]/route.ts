@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { 
+  getArtbookBySlug, 
+  getArtbookOwnership, 
+  updateArtbook, 
+  deleteArtbook 
+} from "@/lib/api/artbooks";
+import { autoIncrementView } from "@/lib/api/views";
 
 
 // Input validation schema for updating artbook
@@ -20,33 +26,8 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    const artbook = await prisma.artbook.findUnique({
-      where: { slug },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        pages: {
-          orderBy: {
-            pageNumber: 'asc',
-          },
-        },
-        post: {
-          include: {
-            _count: {
-              select: {
-                likes: true,
-                comments: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    // Get artbook using centralized API function
+    const artbook = await getArtbookBySlug(slug);
 
     if (!artbook) {
       return NextResponse.json(
@@ -55,24 +36,15 @@ export async function GET(
       );
     }
 
-    // Increment view count
-    if (artbook.post) {
-      await prisma.post.update({
-        where: { id: artbook.post.id },
-        data: {
-          views: {
-            increment: 1,
-          },
-        },
-      });
-    }
+    // Increment view count using centralized API function
+    const newViewCount = await autoIncrementView(slug);
 
     return NextResponse.json({
       artbook: {
         ...artbook,
         post: artbook.post ? {
           ...artbook.post,
-          views: artbook.post.views + 1, // Return incremented view count
+          views: newViewCount,
         } : null,
       },
     });
@@ -106,10 +78,7 @@ export async function PUT(
     }
 
     // Check if artbook exists and user owns it
-    const existingArtbook = await prisma.artbook.findUnique({
-      where: { slug },
-      select: { id: true, authorId: true, slug: true, title: true }
-    });
+    const existingArtbook = await getArtbookOwnership(slug);
 
     if (!existingArtbook) {
       return NextResponse.json(
@@ -130,63 +99,8 @@ export async function PUT(
     // Validate input
     const validatedData = updateArtbookSchema.parse(body);
 
-    // If title is being updated, check if we need to update slug
-    let newSlug = existingArtbook.slug;
-    if (validatedData.title && validatedData.title !== existingArtbook.title) {
-      const baseSlug = validatedData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      
-      newSlug = baseSlug;
-      let counter = 1;
-      
-      // Ensure slug is unique (excluding current artbook)
-      while (await prisma.artbook.findFirst({ 
-        where: { 
-          slug: newSlug,
-          id: { not: existingArtbook.id }
-        } 
-      })) {
-        newSlug = `${baseSlug}-${counter}`;
-        counter++;
-      }
-    }
-
-    // Update artbook
-    const updatedArtbook = await prisma.artbook.update({
-      where: { id: existingArtbook.id },
-      data: {
-        ...validatedData,
-        slug: newSlug,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-        pages: {
-          orderBy: {
-            pageNumber: 'asc',
-          },
-        },
-        post: {
-          include: {
-            _count: {
-              select: {
-                likes: true,
-                comments: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    // Update artbook using centralized API function
+    const updatedArtbook = await updateArtbook(slug, validatedData);
 
     return NextResponse.json({
       message: "Artbook updated successfully",
@@ -230,10 +144,7 @@ export async function DELETE(
     }
 
     // Check if artbook exists and user owns it
-    const existingArtbook = await prisma.artbook.findUnique({
-      where: { slug },
-      select: { id: true, authorId: true }
-    });
+    const existingArtbook = await getArtbookOwnership(slug);
 
     if (!existingArtbook) {
       return NextResponse.json(
@@ -249,47 +160,8 @@ export async function DELETE(
       );
     }
 
-    // Delete artbook and related data in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Delete likes
-      await tx.like.deleteMany({
-        where: {
-          post: {
-            artbookId: existingArtbook.id
-          }
-        }
-      });
-
-      // Delete comments
-      await tx.comment.deleteMany({
-        where: {
-          post: {
-            artbookId: existingArtbook.id
-          }
-        }
-      });
-
-      // Delete post
-      await tx.post.deleteMany({
-        where: {
-          artbookId: existingArtbook.id
-        }
-      });
-
-      // Delete pages
-      await tx.page.deleteMany({
-        where: {
-          artbookId: existingArtbook.id
-        }
-      });
-
-      // Delete artbook
-      await tx.artbook.delete({
-        where: {
-          id: existingArtbook.id
-        }
-      });
-    });
+    // Delete artbook using centralized API function
+    await deleteArtbook(slug);
 
     return NextResponse.json({
       message: "Artbook deleted successfully",
