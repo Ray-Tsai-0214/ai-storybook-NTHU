@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import type { Artbook, Page, Post, Category } from "@/types";
 
 // Types for function parameters
@@ -82,7 +83,7 @@ export async function createArtbook(data: CreateArtbookData, authorId: string) {
   const baseSlug = generateSlug(data.title);
   const slug = await ensureUniqueSlug(baseSlug);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Create the artbook
     const newArtbook = await tx.artbook.create({
       data: {
@@ -263,7 +264,7 @@ export async function deleteArtbook(slug: string): Promise<void> {
     throw new Error("Artbook not found");
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Delete likes
     await tx.like.deleteMany({
       where: {
