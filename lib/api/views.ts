@@ -72,7 +72,12 @@ export async function autoIncrementView(slug: string): Promise<number> {
 
 // Get analytics data for views (admin/author function)
 export async function getViewAnalytics(artbookId?: string, authorId?: string) {
-  const where: any = {};
+  const where: {
+    artbookId?: string;
+    artbook?: {
+      authorId: string;
+    };
+  } = {};
   
   if (artbookId) {
     where.artbookId = artbookId;
