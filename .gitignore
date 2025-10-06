@@ -32,6 +32,35 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+*.db
+*.sqlite
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Media uploads (if stored locally)
+uploads/
+public/uploads/
+
+# AWS and cloud credentials
+.aws/
+*.pem
+
+# Additional logs
+*.log
+
+# OS files
+Thumbs.db
+ehthumbs.db
 
 # vercel
 .vercel
